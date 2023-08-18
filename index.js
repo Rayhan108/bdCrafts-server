@@ -30,13 +30,30 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-const userCollection = client.db("bd-crafts").collection("users");
+const usersCollection = client.db("bd-crafts").collection("users");
 const postsCollection=client.db('bd-crafts').collection("posts")
 const friendsCollection=client.db('bd-crafts').collection("friends")
 
+
+// add user
+app.post('/users', async (req, res) => {
+  const user = req.body;
+  console.log(user)
+  const query = { email: user.email }
+  const existingUser = await userCollection.findOne(query)
+  console.log('existing user', existingUser)
+  if (existingUser) {
+    return res.json('user already exist ')
+
+  }
+  const result = await userCollection.insertOne(user)
+  res.send(result)
+})
+
+
 // get all users
 app.get('/allusers',async (req,res)=>{
-    const result = await userCollection.find().toArray();
+    const result = await usersCollection.find().toArray();
     res.send(result);
 })
 // get all post
@@ -56,19 +73,7 @@ app.post("/post", async (req, res) => {
   const result = await postsCollection.insertOne(body);
   res.send(result);
 });
-app.post('/users', async (req, res) => {
-  const user = req.body;
-  console.log(user)
-  const query = { email: user.email }
-  const existingUser = await userCollection.findOne(query)
-  console.log('existing user', existingUser)
-  if (existingUser) {
-    return res.json('user already exist ')
 
-  }
-  const result = await userCollection.insertOne(user)
-  res.send(result)
-})
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
