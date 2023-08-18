@@ -46,7 +46,7 @@ app.get('/allposts',async (req,res)=>{
 // post
 app.post("/post", async (req, res) => {
   const body = req.body;
-  // console.log(body);
+
   const result = await postsCollection.insertOne(body);
   res.send(result);
 });
