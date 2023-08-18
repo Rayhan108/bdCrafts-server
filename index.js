@@ -32,6 +32,7 @@ async function run() {
   try {
 const userCollection = client.db("bd-crafts").collection("users");
 const postsCollection=client.db('bd-crafts').collection("posts")
+const friendsCollection=client.db('bd-crafts').collection("friends")
 
 // get all users
 app.get('/allusers',async (req,res)=>{
@@ -41,6 +42,11 @@ app.get('/allusers',async (req,res)=>{
 // get all post
 app.get('/allposts',async (req,res)=>{
   const result = await postsCollection.find().toArray();
+  res.send(result);
+})
+// get all friends
+app.get('/allfriends',async (req,res)=>{
+  const result = await friendsCollection.find().toArray();
   res.send(result);
 })
 // post
