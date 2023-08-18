@@ -31,12 +31,25 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
 const userCollection = client.db("bd-crafts").collection("users");
+const postsCollection=client.db('bd-crafts').collection("posts")
 
 // get all users
 app.get('/allusers',async (req,res)=>{
     const result = await userCollection.find().toArray();
     res.send(result);
 })
+// get all post
+app.get('/allposts',async (req,res)=>{
+  const result = await postsCollection.find().toArray();
+  res.send(result);
+})
+// post
+app.post("/post", async (req, res) => {
+  const body = req.body;
+  // console.log(body);
+  const result = await postsCollection.insertOne(body);
+  res.send(result);
+});
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
