@@ -59,20 +59,20 @@ app.get('/allusers',async (req,res)=>{
     const result = await usersCollection.find().toArray();
     res.send(result);
 })
-// get all post
-app.get('/allposts',async (req,res)=>{
-  const result = await postsCollection.find().toArray();
-  res.send(result);
-})
+
 // get all friends
 app.get('/allfriends',async (req,res)=>{
   const result = await friendsCollection.find().toArray();
   res.send(result);
 })
+// get all post
+app.get('/allposts',async (req,res)=>{
+  const result = await postsCollection.find().toArray();
+  res.send(result);
+})
 // post
 app.post("/post", async (req, res) => {
   const body = req.body;
-
   const result = await postsCollection.insertOne(body);
   res.send(result);
 });
@@ -97,7 +97,13 @@ app.post("/post", async (req, res) => {
       );
       res.send(result);
     });
-
+// post query by email
+app.get("/posts/:email",async(req,res)=>{
+  const userEmail = req.params.email;
+  const query = {email:userEmail};
+  const result = await postsCollection.find(query).toArray();
+  res.send(result);
+})
     // find friend
        
        app.get("/users/usersName/:text", async (req, res) => {
