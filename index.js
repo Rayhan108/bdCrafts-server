@@ -2,7 +2,7 @@ const express = require("express");
 const app = express();
 require("dotenv").config();
 const cors = require("cors");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const port = process.env.PORT || 5000;
 // middleware
 const corsOptions = {
@@ -34,19 +34,22 @@ const usersCollection = client.db("bd-crafts").collection("users");
 const postsCollection=client.db('bd-crafts').collection("posts")
 const friendsCollection=client.db('bd-crafts').collection("friends")
 
+// const indexKeys = { name: 1 };
+//     const indexOptions = { name: "userName" };
+//     const result = await usersCollection.createIndex(indexKeys, indexOptions);
 
 // add user
 app.post('/users', async (req, res) => {
   const user = req.body;
   console.log(user)
   const query = { email: user.email }
-  const existingUser = await userCollection.findOne(query)
+  const existingUser = await usersCollection.findOne(query)
   console.log('existing user', existingUser)
   if (existingUser) {
     return res.json('user already exist ')
 
   }
-  const result = await userCollection.insertOne(user)
+  const result = await usersCollection.insertOne(user)
   res.send(result)
 })
 
@@ -73,6 +76,40 @@ app.post("/post", async (req, res) => {
   const result = await postsCollection.insertOne(body);
   res.send(result);
 });
+//comment on post 
+
+    app.patch("/comment/:id", async (req, res) => {
+      const id = req.params.id;
+      const updatePost = req.body;
+
+      const filter = { _id: new ObjectId(id) };
+      const option = { upsert: true };
+
+      const updateDoc = {
+        $set: {
+          comment: updatePost.comment,
+        },
+      };
+      const result = await postsCollection.updateOne(
+        filter,
+        updateDoc,
+        option
+      );
+      res.send(result);
+    });
+
+    // find friend
+       
+       app.get("/users/usersName/:text", async (req, res) => {
+        const text = req.params.text;
+  
+        const result = await usersCollection
+          .find({
+            $or: [{ name: { $regex: text, $options: "i" } }],
+          })
+          .toArray();
+        res.send(result);
+      });
 
 
     // Send a ping to confirm a successful connection
