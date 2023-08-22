@@ -60,10 +60,17 @@ app.get('/allusers',async (req,res)=>{
     res.send(result);
 })
 
-// get all friends
-app.get('/allfriends',async (req,res)=>{
-  const result = await friendsCollection.find().toArray();
+ // get all friend request link
+ app.get("/allFriendRequestLink", async (req, res) => {
+  const query = { status: "Add friend" };
+  const result = await usersCollection.find(query).toArray();
   res.send(result);
+});
+// get all friend list
+app.get("allFriend",async(req,res)=>{
+ const query = {status :"friend"};
+ const result = await usersCollection.find(query).toArray();
+ res.send(result) 
 })
 // get all post
 app.get('/allposts',async (req,res)=>{
@@ -106,7 +113,7 @@ app.get("/posts/:email",async(req,res)=>{
 })
     // find friend
        
-       app.get("/users/usersName/:text", async (req, res) => {
+       app.get("/users/:text", async (req, res) => {
         const text = req.params.text;
   
         const result = await usersCollection
@@ -116,6 +123,31 @@ app.get("/posts/:email",async(req,res)=>{
           .toArray();
         res.send(result);
       });
+         //add friend
+    app.patch("/alluser/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          status: "Add friend",
+        },
+      };
+      const result = await usersCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+         //confirm friend
+    app.patch("/allUsersData/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          status: "friend",
+        },
+      };
+      const result = await usersCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+
 
 
     // Send a ping to confirm a successful connection
