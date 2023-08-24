@@ -33,6 +33,7 @@ async function run() {
 const usersCollection = client.db("bd-crafts").collection("users");
 const postsCollection=client.db('bd-crafts').collection("posts")
 const friendsCollection=client.db('bd-crafts').collection("friends")
+const commentsCollection=client.db('bd-crafts').collection("comments")
 
 // const indexKeys = { name: 1 };
 //     const indexOptions = { name: "userName" };
@@ -67,7 +68,7 @@ app.get('/allusers',async (req,res)=>{
   res.send(result);
 });
 // get all friend list
-app.get("allFriend",async(req,res)=>{
+app.get("/allFriend",async(req,res)=>{
  const query = {status :"friend"};
  const result = await usersCollection.find(query).toArray();
  res.send(result) 
@@ -85,26 +86,12 @@ app.post("/post", async (req, res) => {
 });
 //comment on post 
 
-    app.patch("/comment/:id", async (req, res) => {
-      const id = req.params.id;
-      const updatePost = req.body;
-
-      const filter = { _id: new ObjectId(id) };
-      const option = { upsert: true };
-
-      const updateDoc = {
-        $set: {
-          comment: updatePost.comment,
-        },
-      };
-      const result = await postsCollection.updateOne(
-        filter,
-        updateDoc,
-        option
-      );
+    app.post("/comment", async (req, res) => {
+      const body = req.body;
+      const result = await commentsCollection.insertOne(body);
       res.send(result);
     });
-// post query by email
+// get particuler user posts
 app.get("/posts/:email",async(req,res)=>{
   const userEmail = req.params.email;
   const query = {email:userEmail};
