@@ -30,136 +30,135 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-const usersCollection = client.db("bd-crafts").collection("users");
-const postsCollection=client.db('bd-crafts').collection("posts")
-const friendsCollection=client.db('bd-crafts').collection("friends")
-const commentsCollection=client.db('bd-crafts').collection("comments")
-const sellerFormCollection=client.db('bd-crafts').collection("sellerForm")
+    const usersCollection = client.db("bd-crafts").collection("users");
+    const postsCollection = client.db("bd-crafts").collection("posts");
+    const friendsCollection = client.db("bd-crafts").collection("friends");
+    const commentsCollection = client.db("bd-crafts").collection("comments");
+    const sellerFormCollection = client
+      .db("bd-crafts")
+      .collection("sellerForm");
 
+    // const indexKeys = { name: 1 };
+    //     const indexOptions = { name: "userName" };
+    //     const result = await usersCollection.createIndex(indexKeys, indexOptions);
 
-// const indexKeys = { name: 1 };
-//     const indexOptions = { name: "userName" };
-//     const result = await usersCollection.createIndex(indexKeys, indexOptions);
+    // get method
 
-// add user
-app.post('/users', async (req, res) => {
-  const user = req.body;
-  console.log(user)
-  const query = { email: user.email }
-  const existingUser = await usersCollection.findOne(query)
-  console.log('existing user', existingUser)
-  if (existingUser) {
-    return res.json('user already exist ')
+    // get all users
+    app.get("/allusers", async (req, res) => {
+      const result = await usersCollection.find().toArray();
+      res.send(result);
+    });
 
-  }
-  const result = await usersCollection.insertOne(user)
-  res.send(result)
-})
+    // get all fake friend
+    app.get("/allFakeFriend", async (req, res) => {
+      const result = await friendsCollection.find().toArray();
+      res.send(result);
+    });
+    // get all friend request link
+    app.get("/allFriendRequestLink", async (req, res) => {
+      const query = { status: "Add friend" };
+      const result = await usersCollection.find(query).toArray();
+      res.send(result);
+    });
+    // get all friend list
+    app.get("/allFriend", async (req, res) => {
+      const query = { status: "friend" };
+      const result = await usersCollection.find(query).toArray();
+      res.send(result);
+    });
+    // get all post
+    app.get("/allposts", async (req, res) => {
+      const result = await postsCollection.find().toArray();
+      res.send(result);
+    });
 
+    // get pending seller list
+    app.get("/pendingSeller", async (req, res) => {
+      const result = await sellerFormCollection.find().toArray();
+      res.send(result);
+    });
 
-// get all users
-app.get('/allusers',async (req,res)=>{
-    const result = await usersCollection.find().toArray();
-    res.send(result);
-})
+    // get particuler user posts
+    app.get("/posts/:email", async (req, res) => {
+      const userEmail = req.params.email;
+      const query = { email: userEmail };
+      const result = await postsCollection.find(query).toArray();
+      res.send(result);
+    });
 
-// get all fake friend
-app.get('/allFakeFriend',async (req,res)=>{
-    const result = await friendsCollection.find().toArray();
-    res.send(result);
-})
- // get all friend request link
- app.get("/allFriendRequestLink", async (req, res) => {
-  const query = { status: "Add friend" };
-  const result = await usersCollection.find(query).toArray();
-  res.send(result);
-});
-// get all friend list
-app.get("/allFriend",async(req,res)=>{
- const query = {status :"friend"};
- const result = await usersCollection.find(query).toArray();
- res.send(result) 
-})
-// get all post
-app.get('/allposts',async (req,res)=>{
-  const result = await postsCollection.find().toArray();
-  res.send(result);
-})
-// post
-app.post("/post", async (req, res) => {
-  const body = req.body;
-  const result = await postsCollection.insertOne(body);
-  res.send(result);
-});
-// post
-app.post("/sellerForm", async (req, res) => {
-  const body = req.body;
-  const result = await sellerFormCollection.insertOne(body);
-  res.send(result);
-});
-app.get("/pendingSeller",async(req,res)=>{
-  const result = await sellerFormCollection.find().toArray();
-  res.send(result)
-})
+    // find friend
 
+    app.get("/users/:text", async (req, res) => {
+      const text = req.params.text;
 
-  app.patch("/seller/:email", async (req, res) => {
-   
-    const email = req.params.email;
-    const query = {email:email};
-    
-    const updatedoc = {
-      $set: {
-        role: "seller",
-      },
-    };
-   
-    const result = await usersCollection.updateOne(query, updatedoc);
+      const result = await usersCollection
+        .find({
+          $or: [{ name: { $regex: text, $options: "i" } }],
+        })
+        .toArray();
+      res.send(result);
+    });
+
+    // POST/PATCH Method
+
+    // add user
+    app.post("/users", async (req, res) => {
+      const user = req.body;
+      console.log(user);
+      const query = { email: user.email };
+      const existingUser = await usersCollection.findOne(query);
+      console.log("existing user", existingUser);
+      if (existingUser) {
+        return res.json("user already exist ");
+      }
+      const result = await usersCollection.insertOne(user);
+      res.send(result);
+    });
+
+    // post
+    app.post("/post", async (req, res) => {
+      const body = req.body;
+      const result = await postsCollection.insertOne(body);
+      res.send(result);
+    });
+    // submit  seller form
+    app.post("/sellerForm", async (req, res) => {
+      const body = req.body;
+      const result = await sellerFormCollection.insertOne(body);
+      res.send(result);
+    });
+
+    //update user role to seller and delete autometically
+    app.patch("/seller/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+
+      const updatedoc = {
+        $set: {
+          role: "seller",
+        },
+      };
+
+      const result = await usersCollection.updateOne(query, updatedoc);
 
       // Delete the record from the sellerFormCollection
-      const deleteFilter= {sellerEmail:email}
-      
-      const deleteResult = await sellerFormCollection.deleteOne(deleteFilter);
-  // console.log({ result, deleteResult });
-      res.send({ result, deleteResult });
-   
-  })
-  
-  
-  app.delete("/deleteSeller/:id", async (req, res) => {
-    const id = req.params.id;
-    const query = { _id: new ObjectId(id) };
-    const result = await sellerFormCollection.deleteOne(query);
-    res.send(result);
-  });
+      const deleteFilter = { sellerEmail: email };
 
-//comment on post 
+      const deleteResult = await sellerFormCollection.deleteOne(deleteFilter);
+      // console.log({ result, deleteResult });
+      res.send({ result, deleteResult });
+    });
+
+    //comment on post
 
     app.post("/comment", async (req, res) => {
       const body = req.body;
       const result = await commentsCollection.insertOne(body);
       res.send(result);
     });
-// get particuler user posts
-app.get("/posts/:email",async(req,res)=>{
-  const userEmail = req.params.email;
-  const query = {email:userEmail};
-  const result = await postsCollection.find(query).toArray();
-  res.send(result);
-})
-    // find friend
-       
-       app.get("/users/:text", async (req, res) => {
-        const text = req.params.text;
-  
-        const result = await usersCollection
-          .find({
-            $or: [{ name: { $regex: text, $options: "i" } }],
-          })
-          .toArray();
-        res.send(result);
-      });
-         //add friend
+
+    //add friend
     app.patch("/alluser/:id", async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
@@ -171,7 +170,7 @@ app.get("/posts/:email",async(req,res)=>{
       const result = await usersCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
-         //confirm friend
+    //confirm friend
     app.patch("/allUsersData/:id", async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
@@ -184,7 +183,14 @@ app.get("/posts/:email",async(req,res)=>{
       res.send(result);
     });
 
+    // delete method
 
+    app.delete("/deleteSeller/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await sellerFormCollection.deleteOne(query);
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
