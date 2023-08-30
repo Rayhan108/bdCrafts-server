@@ -34,6 +34,8 @@ const usersCollection = client.db("bd-crafts").collection("users");
 const postsCollection=client.db('bd-crafts').collection("posts")
 const friendsCollection=client.db('bd-crafts').collection("friends")
 const commentsCollection=client.db('bd-crafts').collection("comments")
+const sellerFormCollection=client.db('bd-crafts').collection("sellerForm")
+
 
 // const indexKeys = { name: 1 };
 //     const indexOptions = { name: "userName" };
@@ -61,6 +63,11 @@ app.get('/allusers',async (req,res)=>{
     res.send(result);
 })
 
+// get all fake friend
+app.get('/allFakeFriend',async (req,res)=>{
+    const result = await friendsCollection.find().toArray();
+    res.send(result);
+})
  // get all friend request link
  app.get("/allFriendRequestLink", async (req, res) => {
   const query = { status: "Add friend" };
@@ -84,6 +91,63 @@ app.post("/post", async (req, res) => {
   const result = await postsCollection.insertOne(body);
   res.send(result);
 });
+// post
+app.post("/sellerForm", async (req, res) => {
+  const body = req.body;
+  const result = await sellerFormCollection.insertOne(body);
+  res.send(result);
+});
+app.get("/pendingSeller",async(req,res)=>{
+  const result = await sellerFormCollection.find().toArray();
+  res.send(result)
+})
+
+// make seller
+
+  app.patch("/seller/:email", async (req, res) => {
+    const email = req.params.email;
+    const query = {email:email};
+    
+    const updatedoc = {
+      $set: {
+        role: "seller",
+      },
+    };
+   
+    const result = await usersCollection.updateOne(query, updatedoc);
+    res.send(result);
+  });
+  
+  
+  // app.patch("/seller/:email", async (req, res) => {
+  
+  //     const email = req.params.email;
+  //     const query = { email: email };
+  
+  //     // Update the user's role
+  //     const updatedoc = {
+  //       $set: {
+  //         role: "seller",
+  //       },
+  //     };
+  //     const updateUserResult = await usersCollection.updateOne(query, updatedoc);
+  
+  //     // Delete the record from the sellerFormCollection
+  //     const deleteFilter = { email: email };
+  //     const deleteResult = await sellerFormCollection.deleteOne(deleteFilter);
+  
+  //     res.send({ updateUserResult, deleteResult });
+   
+  // })
+  
+  
+  app.delete("/deleteSeller/:id", async (req, res) => {
+    const id = req.params.id;
+    const query = { _id: new ObjectId(id) };
+    const result = await sellerFormCollection.deleteOne(query);
+    res.send(result);
+  });
+
 //comment on post 
 
     app.post("/comment", async (req, res) => {
