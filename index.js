@@ -100,6 +100,30 @@ async function run() {
       res.send(result);
     });
 
+      // get admin role
+      app.get("/admin/:email", async (req, res) => {
+        const email = req.params.email;
+        const query = { email: email };
+        const user = await usersCollection.findOne(query);
+        const result = { admin: user?.role === "admin" };
+        res.send(result);
+      });
+  
+ // get  seller role
+ app.get("/seller/:email", async (req, res) => {
+  const email = req.params.email;
+  const query = { email: email };
+  const user = await usersCollection.findOne(query);
+  const result = { seller: user?.role === "seller" };
+  res.send(result);
+});
+
+
+
+
+
+
+
     // POST/PATCH Method
 
     // add user
