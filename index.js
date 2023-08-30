@@ -110,7 +110,7 @@ async function run() {
       });
   
  // get  seller role
- app.get("/seller/:email", async (req, res) => {
+ app.get("/sellerRole/:email", async (req, res) => {
   const email = req.params.email;
   const query = { email: email };
   const user = await usersCollection.findOne(query);
