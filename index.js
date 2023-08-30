@@ -102,9 +102,9 @@ app.get("/pendingSeller",async(req,res)=>{
   res.send(result)
 })
 
-// make seller
 
   app.patch("/seller/:email", async (req, res) => {
+   
     const email = req.params.email;
     const query = {email:email};
     
@@ -115,30 +115,15 @@ app.get("/pendingSeller",async(req,res)=>{
     };
    
     const result = await usersCollection.updateOne(query, updatedoc);
-    res.send(result);
-  });
-  
-  
-  // app.patch("/seller/:email", async (req, res) => {
-  
-  //     const email = req.params.email;
-  //     const query = { email: email };
-  
-  //     // Update the user's role
-  //     const updatedoc = {
-  //       $set: {
-  //         role: "seller",
-  //       },
-  //     };
-  //     const updateUserResult = await usersCollection.updateOne(query, updatedoc);
-  
-  //     // Delete the record from the sellerFormCollection
-  //     const deleteFilter = { email: email };
-  //     const deleteResult = await sellerFormCollection.deleteOne(deleteFilter);
-  
-  //     res.send({ updateUserResult, deleteResult });
+
+      // Delete the record from the sellerFormCollection
+      const deleteFilter= {sellerEmail:email}
+      
+      const deleteResult = await sellerFormCollection.deleteOne(deleteFilter);
+  // console.log({ result, deleteResult });
+      res.send({ result, deleteResult });
    
-  // })
+  })
   
   
   app.delete("/deleteSeller/:id", async (req, res) => {
