@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 require("dotenv").config();
 const cors = require("cors");
+const SSLCommerzPayment = require('sslcommerz-lts')
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const port = process.env.PORT || 5000;
 // middleware
@@ -28,6 +29,11 @@ const client = new MongoClient(uri, {
   },
 });
 
+
+const store_id = process.env.STORE_ID;
+const store_passwd = process.env.STORE_SECRET;
+const is_live = false
+
 async function run() {
   try {
     const usersCollection = client.db("bd-crafts").collection("users");
@@ -37,6 +43,7 @@ async function run() {
     const sellerFormCollection = client
       .db("bd-crafts")
       .collection("sellerForm");
+    const productCollections = client.db("bd-crafts").collection("products")  
 
     // const indexKeys = { name: 1 };
     //     const indexOptions = { name: "userName" };
@@ -216,6 +223,50 @@ async function run() {
       res.send(result);
     });
 
+
+    // payment SSLCommerz
+    
+    app.post('/order', async(req,res) =>{
+      const product = await productCollections.find(({_id: new ObjectId(req.body.productID)}))
+      const order = req.body;
+      
+      const tran_id = new ObjectId().toString();
+      const data = {
+        total_amount: product.price,
+        currency: order.currency,
+        tran_id: tran_id, // use unique tran_id for each api call
+        success_url: 'http://localhost:3030/success',
+        fail_url: 'http://localhost:3030/fail',
+        cancel_url: 'http://localhost:3030/cancel',
+        ipn_url: 'http://localhost:3030/ipn',
+        shipping_method: 'Courier',
+        product_name: 'Computer.',
+        product_category: 'Electronic',
+        product_profile: 'general',
+        cus_name: order.name,
+        cus_email: 'customer@example.com',
+        cus_add1: order.address,
+        cus_add2: 'Dhaka',
+        cus_city: 'Dhaka',
+        cus_state: 'Dhaka',
+        cus_postcode: '1000',
+        cus_country: 'Bangladesh',
+        cus_phone: '01711111111',
+        cus_fax: '01711111111',
+        ship_name: 'Customer Name',
+        ship_add1: 'Dhaka',
+        ship_add2: 'Dhaka',
+        ship_city: 'Dhaka',
+        ship_state: 'Dhaka',
+        ship_postcode: 1000,
+        ship_country: 'Bangladesh',
+    };
+    console.log(data);
+    const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
+    let GateWayPageURL =  apiResPonse.GateWayPageURL;
+    res.redirect({url: GateWayPageURL});
+    console.log("Redircting to", GateWayPageURL)
+    })
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
