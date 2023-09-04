@@ -34,10 +34,8 @@ async function run() {
     const postsCollection = client.db("bd-crafts").collection("posts");
     const friendsCollection = client.db("bd-crafts").collection("friends");
     const commentsCollection = client.db("bd-crafts").collection("comments");
-    const sellerFormCollection = client
-      .db("bd-crafts")
-      .collection("sellerForm");
-
+    const sellerFormCollection = client.db("bd-crafts").collection("sellerForm");
+    const productsCollection = client.db("bd-crafts").collection("products");
     // const indexKeys = { name: 1 };
     //     const indexOptions = { name: "userName" };
     //     const result = await usersCollection.createIndex(indexKeys, indexOptions);
@@ -71,6 +69,13 @@ async function run() {
     app.get("/allposts", async (req, res) => {
       const result = await postsCollection.find().toArray();
       res.send(result);
+    });
+    app.get("/myProducts", async (req, res) => {
+      // console.log(req.query);
+      const query = { sellerEmail: req.query.email };
+      const result = await productsCollection.find(query).toArray();
+      res.send(result);
+      // console.log(result);
     });
 
     // get pending seller list
@@ -106,6 +111,30 @@ async function run() {
         const query = { email: email };
         const user = await usersCollection.findOne(query);
         const result = { admin: user?.role === "admin" };
+        res.send(result);
+      });
+      // get user role
+      app.get("/user/:email", async (req, res) => {
+        const email = req.params.email;
+        const query = { email: email };
+        const user = await usersCollection.findOne(query);
+        const result = { admin: user?.role === "user" };
+        res.send(result);
+      });
+      // get Buyer role
+      app.get("/buyerRole/:email", async (req, res) => {
+        const email = req.params.email;
+        const query = { email: email };
+        const user = await usersCollection.findOne(query);
+        const result = { admin: user?.role === "buyer" };
+        res.send(result);
+      });
+      // get Wholeseller role
+      app.get("/wholesellerRole/:email", async (req, res) => {
+        const email = req.params.email;
+        const query = { email: email };
+        const user = await usersCollection.findOne(query);
+        const result = { admin: user?.role === "wholeseller" };
         res.send(result);
       });
   
@@ -144,6 +173,13 @@ async function run() {
     app.post("/post", async (req, res) => {
       const body = req.body;
       const result = await postsCollection.insertOne(body);
+      res.send(result);
+    });
+    //Add products
+    app.post("/addProducts", async (req, res) => {
+      const newProducts = req.body;
+
+      const result = await productsCollection.insertOne(newProducts);
       res.send(result);
     });
     // submit  seller form
