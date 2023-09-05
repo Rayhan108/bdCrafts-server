@@ -36,6 +36,7 @@ async function run() {
     const commentsCollection = client.db("bd-crafts").collection("comments");
     const sellerFormCollection = client.db("bd-crafts").collection("sellerForm");
     const productsCollection = client.db("bd-crafts").collection("products");
+    const cartsCollection = client.db("bd-crafts").collection("carts");
  
     // const indexKeys = { name: 1 };
     //     const indexOptions = { name: "userName" };
@@ -88,7 +89,7 @@ async function run() {
     // get pending products list
     app.get("/pendingProducts", async (req, res) => {
       const query = {status:"pending"};
-      const result = await productsCollection.find().toArray();
+      const result = await productsCollection.find(query).toArray();
       res.send(result);
     });
     // get particuler user posts
@@ -125,7 +126,7 @@ async function run() {
         const email = req.params.email;
         const query = { email: email };
         const user = await usersCollection.findOne(query);
-        const result = { admin: user?.role === "user" };
+        const result = { user: user?.role === "user" };
         res.send(result);
       });
       // get Buyer role
@@ -133,7 +134,7 @@ async function run() {
         const email = req.params.email;
         const query = { email: email };
         const user = await usersCollection.findOne(query);
-        const result = { admin: user?.role === "buyer" };
+        const result = { buyer: user?.role === "buyer" };
         res.send(result);
       });
       // get Wholeseller role
@@ -141,7 +142,7 @@ async function run() {
         const email = req.params.email;
         const query = { email: email };
         const user = await usersCollection.findOne(query);
-        const result = { admin: user?.role === "wholeseller" };
+        const result = { wholeseller: user?.role === "wholeseller" };
         res.send(result);
       });
   
@@ -160,10 +161,30 @@ app.get("/allProduct", async (req, res)=>{
   const result = await productsCollection.find(query).toArray();
   res.send(result)
 })
+// get cart
+app.get('/cartsData',async (req, res) => {
+  const email = req.query.email;
+  const query = { email: email };
+  const result = await cartsCollection.find(query).toArray();
+  
+  res.send(result);
+});
 
 
-
-
+// post on cart
+app.post("/carts", async (req, res) => {
+  const item = req.body;
+  //console.log(item);
+  const result = await cartsCollection.insertOne(item);
+  res.send(result);
+});
+//  delete cart api
+app.delete("/carts/:id", async (req, res) => {
+  const id = req.params.id;
+  const query = { _id: new ObjectId(id) };
+  const result = await cartsCollection.deleteOne(query);
+  res.send(result);
+});
 
 
 
@@ -193,7 +214,7 @@ app.get("/allProduct", async (req, res)=>{
     app.post("/addProducts", async (req, res) => {
       const newProducts = req.body;
 
-      const result = await pendingProductsCollection.insertOne(newProducts);
+      const result = await productsCollection.insertOne(newProducts);
       res.send(result);
     });
     // submit  seller form
@@ -277,6 +298,13 @@ app.get("/allProduct", async (req, res)=>{
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await sellerFormCollection.deleteOne(query);
+      res.send(result);
+    });
+    // delete products
+    app.delete("/deleteProducts/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await productsCollection.deleteOne(query);
       res.send(result);
     });
 
