@@ -44,6 +44,7 @@ async function run() {
       .db("bd-crafts")
       .collection("sellerForm");
     const productCollections = client.db("bd-crafts").collection("products")  
+    const OrderCollection = client.db("bd-crafts").collection("orders")  
 
     // const indexKeys = { name: 1 };
     //     const indexOptions = { name: "userName" };
@@ -225,9 +226,22 @@ async function run() {
 
 
     // payment SSLCommerz
+    app.post("/addProduct", async (req, res) => {
+      const body = req.body;
+      const result = await productCollections.insertOne(body);
+      res.send(result);
+    });
+
+    
+ 
+    app.get("/products", async (req, res) =>{
+      const products = await productCollections.find().toArray();
+      res.send(products)
+
+    })
     
     app.post('/order', async(req,res) =>{
-      const product = await productCollections.find(({_id: new ObjectId(req.body.productID)}))
+      const product = await productCollections.findOne(({_id: new ObjectId(req.body.productID)}))
       const order = req.body;
       
       const tran_id = new ObjectId().toString();
@@ -235,8 +249,8 @@ async function run() {
         total_amount: product.price,
         currency: order.currency,
         tran_id: tran_id, // use unique tran_id for each api call
-        success_url: 'http://localhost:3030/success',
-        fail_url: 'http://localhost:3030/fail',
+        success_url: `http://localhost:3030/payment/success/${tran_id}`,
+        fail_url: `http://localhost:3030/payment/fail/${tran_id}`,
         cancel_url: 'http://localhost:3030/cancel',
         ipn_url: 'http://localhost:3030/ipn',
         shipping_method: 'Courier',
@@ -262,11 +276,43 @@ async function run() {
         ship_country: 'Bangladesh',
     };
     console.log(data);
-    const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
-    let GateWayPageURL =  apiResPonse.GateWayPageURL;
-    res.redirect({url: GateWayPageURL});
-    console.log("Redircting to", GateWayPageURL)
+    const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live)
+    sslcz.init(data).then(apiResponse => {
+        // Redirect the user to payment gateway
+        let GatewayPageURL = apiResponse.GatewayPageURL
+        res.send({url:GatewayPageURL})
+        const finalOrder = {
+          product,
+          paidStatus: false,
+          transjectionId: tran_id,
+        }
+        const result = OrderCollection.insertOne(finalOrder)
+        console.log('Redirecting to: ', GatewayPageURL)
+    });
+    app.post("/payment/success/:tranID", async(req,res) =>{
+      console.log(req.params.tranID)
+      const result = await OrderCollection.updateOne(
+        {transjectionId: req.params.tranID},
+        {
+          $set:{
+            paidStatus:true,
+          },
+        }
+      );
+      if(result.modifiedCount > 0){
+        res.redirect(`http://localhost:5000/payment/success/${req.params.tranID}`)
+      };
     })
+    app.post("/payment/fail/:tranID", async(req,res) =>{
+     const result = OrderCollection.deleteOne({transjectionId: req.params.tranID})
+     if(result.deletedCount){
+      res.redirect(`http://localhost:5000/payment/fail/${req.params.tranID}`)
+     }
+    })
+
+    })
+    
+  
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
