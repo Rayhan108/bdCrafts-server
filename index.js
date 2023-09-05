@@ -36,6 +36,7 @@ async function run() {
     const commentsCollection = client.db("bd-crafts").collection("comments");
     const sellerFormCollection = client.db("bd-crafts").collection("sellerForm");
     const productsCollection = client.db("bd-crafts").collection("products");
+ 
     // const indexKeys = { name: 1 };
     //     const indexOptions = { name: "userName" };
     //     const result = await usersCollection.createIndex(indexKeys, indexOptions);
@@ -70,9 +71,10 @@ async function run() {
       const result = await postsCollection.find().toArray();
       res.send(result);
     });
+
     app.get("/myProducts", async (req, res) => {
       // console.log(req.query);
-      const query = { sellerEmail: req.query.email };
+      const query = { sellerEmail: req.query.email,status:"approved"};
       const result = await productsCollection.find(query).toArray();
       res.send(result);
       // console.log(result);
@@ -83,7 +85,12 @@ async function run() {
       const result = await sellerFormCollection.find().toArray();
       res.send(result);
     });
-
+    // get pending products list
+    app.get("/pendingProducts", async (req, res) => {
+      const query = {status:"pending"};
+      const result = await productsCollection.find().toArray();
+      res.send(result);
+    });
     // get particuler user posts
     app.get("/posts/:email", async (req, res) => {
       const userEmail = req.params.email;
@@ -147,6 +154,13 @@ async function run() {
   res.send(result);
 });
 
+// all product api
+app.get("/allProduct", async (req, res)=>{
+  const query = { status: "approved" };
+  const result = await productsCollection.find(query).toArray();
+  res.send(result)
+})
+
 
 
 
@@ -179,7 +193,7 @@ async function run() {
     app.post("/addProducts", async (req, res) => {
       const newProducts = req.body;
 
-      const result = await productsCollection.insertOne(newProducts);
+      const result = await pendingProductsCollection.insertOne(newProducts);
       res.send(result);
     });
     // submit  seller form
@@ -209,6 +223,20 @@ async function run() {
       // console.log({ result, deleteResult });
       res.send({ result, deleteResult });
     });
+
+// approve products
+  app.patch("/approvedProducts/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          status: "approved",
+        },
+      };
+      const result = await productsCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+
 
     //comment on post
 
