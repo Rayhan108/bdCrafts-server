@@ -101,6 +101,16 @@ async function run() {
       const result = await postsCollection.find(query).toArray();
       res.send(result);
     });
+    // get all comments
+    app.get("/comments/:id", async (req, res) => {
+      const id = req.params.id;
+      console.log(id);
+      const query = { postId: id };
+      console.log(query);
+      const result = await commentsCollection.find(query).toArray();
+      console.log(result);
+      res.send(result);
+    });
 
     // find friend
 
