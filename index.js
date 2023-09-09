@@ -199,6 +199,16 @@ async function run() {
 
       res.send(result);
     });
+    //  delete user 
+    app.delete("/manageUser/:id", async (req, res) => {
+      const id = req.params.id;
+
+      const query = { _id: new ObjectId(id) };
+      
+      const result = await usersCollection.deleteOne(query);
+
+      res.send(result);
+    });
 
     // POST/PATCH Method
 
@@ -212,6 +222,7 @@ async function run() {
       if (existingUser) {
         return res.json("user already exist ");
       }
+     
       const result = await usersCollection.insertOne(user);
       res.send(result);
     });
@@ -321,6 +332,10 @@ async function run() {
       
       res.send(result);
     });
+
+  
+ 
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
