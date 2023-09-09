@@ -32,7 +32,7 @@ async function run() {
   try {
     const usersCollection = client.db("bd-crafts").collection("users");
     const postsCollection = client.db("bd-crafts").collection("posts");
-    const friendsCollection = client.db("bd-crafts").collection("friends");
+    // const friendsCollection = client.db("bd-crafts").collection("friends");
     const commentsCollection = client.db("bd-crafts").collection("comments");
     const sellerFormCollection = client
       .db("bd-crafts")
@@ -52,11 +52,7 @@ async function run() {
       res.send(result);
     });
 
-    // get all fake friend
-    app.get("/allFakeFriend", async (req, res) => {
-      const result = await friendsCollection.find().toArray();
-      res.send(result);
-    });
+   
     // get all friend request link
     app.get("/allFriendRequestLink", async (req, res) => {
       const query = { status: "Add friend" };
@@ -69,6 +65,31 @@ async function run() {
       const result = await usersCollection.find(query).toArray();
       res.send(result);
     });
+      //add friend
+      app.patch("/alluser/:id", async (req, res) => {
+        const id = req.params.id;
+        const filter = { _id: new ObjectId(id) };
+        const updateDoc = {
+          $set: {
+            status: "Add friend",
+          },
+        };
+        const result = await usersCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      });
+      //confirm friend
+      app.patch("/allUsersData/:id", async (req, res) => {
+        const id = req.params.id;
+        const filter = { _id: new ObjectId(id) };
+        const updateDoc = {
+          $set: {
+            status: "friend",
+          },
+        };
+        const result = await usersCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      });
+
     // get all post
     app.get("/allposts", async (req, res) => {
       const result = await postsCollection.find().toArray();
@@ -289,30 +310,7 @@ async function run() {
       res.send(result);
     });
 
-    //add friend
-    app.patch("/alluser/:id", async (req, res) => {
-      const id = req.params.id;
-      const filter = { _id: new ObjectId(id) };
-      const updateDoc = {
-        $set: {
-          status: "Add friend",
-        },
-      };
-      const result = await usersCollection.updateOne(filter, updateDoc);
-      res.send(result);
-    });
-    //confirm friend
-    app.patch("/allUsersData/:id", async (req, res) => {
-      const id = req.params.id;
-      const filter = { _id: new ObjectId(id) };
-      const updateDoc = {
-        $set: {
-          status: "friend",
-        },
-      };
-      const result = await usersCollection.updateOne(filter, updateDoc);
-      res.send(result);
-    });
+  
 
     // delete method
 
