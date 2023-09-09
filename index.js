@@ -249,10 +249,10 @@ async function run() {
         total_amount: product.price,
         currency: order.currency,
         tran_id: tran_id, // use unique tran_id for each api call
-        success_url: `http://localhost:3030/payment/success/${tran_id}`,
-        fail_url: `http://localhost:3030/payment/fail/${tran_id}`,
-        cancel_url: 'http://localhost:3030/cancel',
-        ipn_url: 'http://localhost:3030/ipn',
+        success_url: `http://localhost:5000/payment/success/${tran_id}`,
+        fail_url: `http://localhost:5000/payment/fail/${tran_id}`,
+        cancel_url: 'http://localhost:5000/cancel',
+        ipn_url: 'http://localhost:5000/ipn',
         shipping_method: 'Courier',
         product_name: 'Computer.',
         product_category: 'Electronic',
@@ -311,6 +311,47 @@ async function run() {
     })
 
     })
+
+
+    ///Search Collection
+
+    app.get('/search/:text', async (req, res) => {
+      const searchText = req.params.text;
+      
+      // Search in projectCollection
+      const projectResults = await projectCollection.find({
+          $or: [
+              { tec: { $regex: searchText, $options: "i" } },
+              { id: { $regex: searchText, $options: "i" } }
+          ]
+      }).toArray();
+      
+      // Search in userCollection
+      const userResults = await userCollection.find({
+          // Define your search criteria for the userCollection here
+      }).toArray();
+  
+      // Search in ViedosCollection
+      const videosResults = await ViedosCollection.find({
+          // Define your search criteria for the ViedosCollection here
+      }).toArray();
+  
+      // Search in groupCollection
+      const groupResults = await groupCollection.find({
+          // Define your search criteria for the groupCollection here
+      }).toArray();
+  
+      // Combine and send all the results
+      const combinedResults = {
+          projects: projectResults,
+          users: userResults,
+          videos: videosResults,
+          groups: groupResults
+      };
+      
+      res.send(combinedResults);
+  });
+  
     
   
     // Send a ping to confirm a successful connection
