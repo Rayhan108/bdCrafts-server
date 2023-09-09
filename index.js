@@ -45,6 +45,8 @@ async function run() {
       .collection("sellerForm");
     const productCollections = client.db("bd-crafts").collection("products")  
     const OrderCollection = client.db("bd-crafts").collection("orders")  
+    const productsCollection = client.db("bd-crafts").collection("products");
+    const cartsCollection = client.db("bd-crafts").collection("carts");
 
     // const indexKeys = { name: 1 };
     //     const indexOptions = { name: "userName" };
@@ -81,17 +83,41 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/myProducts", async (req, res) => {
+      // console.log(req.query);
+      const query = { sellerEmail: req.query.email, status: "approved" };
+      const result = await productsCollection.find(query).toArray();
+      res.send(result);
+      // console.log(result);
+    });
+
     // get pending seller list
     app.get("/pendingSeller", async (req, res) => {
       const result = await sellerFormCollection.find().toArray();
       res.send(result);
     });
 
+    // get pending products list
+    app.get("/pendingProducts", async (req, res) => {
+      const query = { status: "pending" };
+      const result = await productsCollection.find(query).toArray();
+      res.send(result);
+    });
     // get particuler user posts
     app.get("/posts/:email", async (req, res) => {
       const userEmail = req.params.email;
       const query = { email: userEmail };
       const result = await postsCollection.find(query).toArray();
+      res.send(result);
+    });
+    // get all comments
+    app.get("/comments/:id", async (req, res) => {
+      const id = req.params.id;
+      console.log(id);
+      const query = { postId: id };
+      console.log(query);
+      const result = await commentsCollection.find(query).toArray();
+      console.log(result);
       res.send(result);
     });
 
@@ -126,11 +152,81 @@ async function run() {
   res.send(result);
 });
 
+    // get admin role
+    app.get("/admin/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      const result = { admin: user?.role === "admin" };
+      res.send(result);
+    });
+    // get user role
+    app.get("/user/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      const result = { user: user?.role === "user" };
+      res.send(result);
+    });
+    // get Buyer role
+    app.get("/buyerRole/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      const result = { buyer: user?.role === "buyer" };
+      res.send(result);
+    });
+    // get Wholeseller role
+    app.get("/wholesellerRole/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      const result = { wholeseller: user?.role === "wholeseller" };
+      res.send(result);
+    });
+
+    // get  seller role
+    app.get("/sellerRole/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      const result = { seller: user?.role === "seller" };
+      res.send(result);
+    });
+
+    // all product api
+    app.get("/allProduct", async (req, res) => {
+      const query = { status: "approved" };
+      const result = await productsCollection.find(query).toArray();
+      res.send(result);
+    });
+    // get cart
+    app.get("/cartsData", async (req, res) => {
+      const email = req.query.email;
+      const query = { email: email };
+      const result = await cartsCollection.find(query).toArray();
 
 
+      res.send(result);
+    });
 
+    // post on cart
+    app.post("/carts", async (req, res) => {
+      const item = req.body;
+      //console.log(item);
+      const result = await cartsCollection.insertOne(item);
+      res.send(result);
+    });
+    //  delete cart api
+    app.delete("/carts/:id", async (req, res) => {
+      const id = req.params.id;
 
+      const query = { id: id };
+      console.log(query);
+      const result = await cartsCollection.deleteOne(query);
 
+      res.send(result);
+    });
 
     // POST/PATCH Method
 
@@ -182,6 +278,19 @@ async function run() {
       res.send({ result, deleteResult });
     });
 
+    // approve products
+    app.patch("/approvedProducts/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          status: "approved",
+        },
+      };
+      const result = await productsCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+
     //comment on post
 
     app.post("/comment", async (req, res) => {
@@ -223,12 +332,14 @@ async function run() {
       const result = await sellerFormCollection.deleteOne(query);
       res.send(result);
     });
-
-
-    // payment SSLCommerz
-    app.post("/addProduct", async (req, res) => {
-      const body = req.body;
-      const result = await productCollections.insertOne(body);
+    // delete products
+    app.delete("/deleteProducts/:id", async (req, res) => {
+      const id = req.params.id;
+      
+      const query = { _id: new ObjectId(id) };
+      
+      const result = await productsCollection.deleteOne(query);
+      
       res.send(result);
     });
 
