@@ -39,6 +39,7 @@ async function run() {
       .collection("sellerForm");
     const productsCollection = client.db("bd-crafts").collection("products");
     const cartsCollection = client.db("bd-crafts").collection("carts");
+    const eventCollection = client.db("bd-crafts").collection("events");
 
     // const indexKeys = { name: 1 };
     //     const indexOptions = { name: "userName" };
@@ -331,7 +332,32 @@ async function run() {
       res.send(result);
     });
 
-  
+  // Event Data 
+
+app.post("/eventdata", async (req, res) => {
+  try {
+  const eventdata = req.body;
+  console.log("event data", eventdata);
+  const result = await eventCollection.insertOne(eventdata);
+  res.send(result);
+}  catch (error) {
+    console.error("Error while fetching data from MongoDB:", error);
+    res.status(500).send("Error while fetching data from MongoDB");
+  }
+});
+
+app.get("/eventdata", async (req, res) => {
+  try {
+    const cursor = eventCollection.find();
+    const result = await cursor.toArray();
+    res.send(result);
+}  catch (error) {
+    console.error("Error while fetching data from MongoDB:", error);
+    res.status(500).send("Error while fetching data from MongoDB");
+  }
+});
+
+// Event oparation end
  
 
 
