@@ -334,7 +334,7 @@ async function run() {
 
   // Event Data 
 
-app.post("/eventdata", async (req, res) => {
+app.post("/eventdataPost", async (req, res) => {
   try {
   const eventdata = req.body;
   console.log("event data", eventdata);
