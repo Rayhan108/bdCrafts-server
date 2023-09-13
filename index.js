@@ -2,9 +2,9 @@ const express = require("express");
 const app = express();
 require("dotenv").config();
 const cors = require("cors");
-
+const SSLCommerzPayment=require("sslcommerz-lts")
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 3000;
 // middleware
 const corsOptions = {
   origin: "*",
@@ -30,15 +30,22 @@ const client = new MongoClient(uri, {
 });
 
 
+const store_id = process.env.STORE_ID;
+const store_passwd = process.env.STORE_SECRET;
+const is_live = false
+
 async function run() {
   try {
     const usersCollection = client.db("bd-crafts").collection("users");
     const postsCollection = client.db("bd-crafts").collection("posts");
     // const friendsCollection = client.db("bd-crafts").collection("friends");
     const commentsCollection = client.db("bd-crafts").collection("comments");
-    const sellerFormCollection = client
-      .db("bd-crafts")
-      .collection("sellerForm");
+    const sellerFormCollection = client.db("bd-crafts").collection("sellerForm");
+      ///tarik
+    const groupsCollection = client.db("bd-crafts").collection("groups")  
+    const storyCollection = client.db("bd-crafts").collection("stories")  
+    ///////
+    const OrderCollection = client.db("bd-crafts").collection("orders")  
     const productsCollection = client.db("bd-crafts").collection("products");
     const cartsCollection = client.db("bd-crafts").collection("carts");
     const eventCollection = client.db("bd-crafts").collection("events");
@@ -133,6 +140,7 @@ async function run() {
       const result = await sellerFormCollection.find().toArray();
       res.send(result);
     });
+
     // get pending products list
     app.get("/pendingProducts", async (req, res) => {
       const query = { status: "pending" };
@@ -157,6 +165,24 @@ async function run() {
       res.send(result);
     });
 
+
+      // get admin role
+      app.get("/admin/:email", async (req, res) => {
+        const email = req.params.email;
+        const query = { email: email };
+        const user = await usersCollection.findOne(query);
+        const result = { admin: user?.role === "admin" };
+        res.send(result);
+      });
+  
+ // get  seller role
+ app.get("/sellerRole/:email", async (req, res) => {
+  const email = req.params.email;
+  const query = { email: email };
+  const user = await usersCollection.findOne(query);
+  const result = { seller: user?.role === "seller" };
+  res.send(result);
+});
 
     // get admin role
     app.get("/admin/:email", async (req, res) => {
@@ -221,6 +247,7 @@ async function run() {
       const query = { email: email };
       const result = await cartsCollection.find(query).toArray();
 
+
       res.send(result);
     });
 
@@ -275,11 +302,14 @@ async function run() {
       const result = await postsCollection.insertOne(body);
       res.send(result);
     });
-    //Add products
-    app.post("/addProducts", async (req, res) => {
-      const newProducts = req.body;
-
-      const result = await productsCollection.insertOne(newProducts);
+    ////TARIK // createStory
+    app.post("/createStory", async (req, res) => {
+      const body = req.body;
+      const result = await storyCollection.insertOne(body);
+      res.send(result);
+    });
+    app.get("/createStory", async (req, res) => {
+      const result = await storyCollection.find().toArray();
       res.send(result);
     });
     // submit  seller form
@@ -353,79 +383,140 @@ async function run() {
       res.send(result);
     });
 
-  // Event Data 
+    
+ 
+    // app.get("/products", async (req, res) =>{
+    //   const products = await productCollections.find().toArray();
+    //   res.send(products)
 
-app.post("/eventdataPost", async (req, res) => {
-  try {
-  const eventdata = req.body;
-  console.log("event data", eventdata);
-  const result = await eventCollection.insertOne(eventdata);
-  res.send(result);
-}  catch (error) {
-    console.error("Error while fetching data from MongoDB:", error);
-    res.status(500).send("Error while fetching data from MongoDB");
-  }
-});
+    // })
+    
+    const tran_id = new ObjectId().toString();
+    app.post('/order', async(req,res) =>{
+      const product = await OrderCollection.findOne(({_id: new ObjectId(req.body.productID)}))
+      const order = req.body;
+      console.log(order)
+      console.log(tran_id)
+      const data = {
+        total_amount: order.price,
+        currency: order.currency,
+        tran_id: tran_id, // use unique tran_id for each api call
+        success_url: `https://bd-crafts-server.vercel.app/payment/success/${tran_id}`,
+        fail_url: `https://bd-crafts-server.vercel.app/payment/fail/${tran_id}`,
+        cancel_url: 'https://bd-crafts-server.vercel.app/login',
+        ipn_url: 'https://bd-crafts-server.vercel.app/ipn',
+        shipping_method: 'Courier',
+        product_name: 'Computer.',
+        product_category: 'Electronic',
+        product_profile: 'general',
+        cus_name: order.name,
+        cus_email: 'customer@example.com',
+        cus_add1: order.address,
+        cus_add2: 'Dhaka',
+        cus_city: 'Dhaka',
+        cus_state: 'Dhaka',
+        cus_postcode: '1000',
+        cus_country: 'Bangladesh',
+        cus_phone: '01711111111',
+        cus_fax: '01711111111',
+        ship_name: 'Customer Name',
+        ship_add1: 'Dhaka',
+        ship_add2: 'Dhaka',
+        ship_city: 'Dhaka',
+        ship_state: 'Dhaka',
+        ship_postcode: 1000,
+        ship_country: 'Bangladesh',
+    };
+    console.log(data);
+    const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live)
+    sslcz.init(data).then(apiResponse => {
+        // Redirect the user to payment gateway
+        let GatewayPageURL = apiResponse.GatewayPageURL
+        res.send({url:GatewayPageURL})
+        const finalOrder = {
+          product,
+          paidStatus: false,
+          transjectionId: tran_id,
+        }
+        const result = OrderCollection.insertOne(finalOrder)
+        console.log('Redirecting to: ', GatewayPageURL)
+    });
 
-app.get("/eventdata", async (req, res) => {
-  try {
-    const cursor = eventCollection.find();
-    const result = await cursor.toArray();
-    res.send(result);
-}  catch (error) {
-    console.error("Error while fetching data from MongoDB:", error);
-    res.status(500).send("Error while fetching data from MongoDB");
-  }
-});
+    })
+    ///sslcommerz related
+    app.post("/payment/success/:tranID", async(req,res) =>{
+      console.log(req.params.tranID)
+      const result = await OrderCollection.updateOne(
+        {transjectionId: req.params.tranID},
+        {
+          $set:{
+            paidStatus:true,
+          },
+        }
+      );
+      if(result.modifiedCount > 0){
+        console.log("result",)
+        res.redirect(`https://bd-crafts-client.vercel.app/paymentSuccess/${req.params.tranID}`)
+      };
+    })
+    app.post("/payment/fail/:tranID", async(req,res) =>{
+     const result = OrderCollection.deleteOne({transjectionId: req.params.tranID})
+     if(result.deletedCount){
+      res.redirect(`https://bd-crafts-server.vercel.app/payment/fail/${req.params.tranID}`)
+     }
+    })
 
-// Event oparation end
+    ///Search Collection
 
-
- // get Single User
- app.get("/singleUser/:email", async (req, res) => {
-  const userEmail = req.params.email;
-  const query = { email: userEmail };
-  const result = await usersCollection.find(query).toArray();
-  res.send(result);
-});
-
-// Update user name
-app.put("/updateUserName/:email", async (req, res) => {
-  const { email } = req.params;
-  const { newName } = req.body;
-    try {
-    const result = await usersCollection.updateOne(
-      { email: email },
-      { $set: { name: newName } }
-    );
-    if (result.matchedCount === 1) {
-      res.status(200).json({ message: "User name updated successfully" });
-    } else {
-      res.status(404).json({ message: "User not found" });
-    }
-  } catch (error) {
-    console.error("Error updating user name:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    app.get('/search/:text', async (req, res) => {
+      const searchText = req.params.text;
+      
+      // Search in projectCollection
+      const postResults = await postsCollection.find({
+          $or: [
+              { caption: { $regex: searchText, $options: "i" } },
+              { name: { $regex: searchText, $options: "i" } }
+          ]
+      }).toArray();
+      
+      // Search in userCollection
+      // const shopResults = await shopCollection.find({
+      //     // Define your search criteria for the userCollection here
+      // }).toArray();
+  
+      // Search in usersCollection
+      const usersResults = await usersCollection.find({
+        $or: [
+          { email: { $regex: searchText, $options: "i" } },
+          { name: { $regex: searchText, $options: "i" } }
+      ]
+      }).toArray();
+  
+      // Search in groupCollection
+      // const groupResults = await groupsCollection.find({
+      //     // Define your search criteria for the groupCollection here
+      // }).toArray();
+      const productResults = await productsCollection.find({
+        $or: [
+          { email: { $regex: searchText, $options: "i" } },
+          { name: { $regex: searchText, $options: "i" } }
+      ]
+      }).toArray();
+  
+      // Combine and send all the results
+      const combinedResults = {
+          post: postResults,
+          // shops: shopResults,
+          users: usersResults,
+          // groups: groupResults,
+          products:productResults
+      };
+      
+      res.send(combinedResults);
+  });
+  
+    
+  
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
