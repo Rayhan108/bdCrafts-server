@@ -4,7 +4,7 @@ require("dotenv").config();
 const cors = require("cors");
 const SSLCommerzPayment=require("sslcommerz-lts")
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 5000;
 // middleware
 const corsOptions = {
   origin: "*",
