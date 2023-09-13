@@ -78,6 +78,18 @@ async function run() {
         const result = await usersCollection.updateOne(filter, updateDoc);
         res.send(result);
       });
+      // deny add friend
+      app.patch("/denyFriend/:id", async (req, res) => {
+        const id = req.params.id;
+        const filter = { _id: new ObjectId(id) };
+        const updateDoc = {
+          $set: {
+            status: "",
+          },
+        };
+        const result = await usersCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      });
       //confirm friend
       app.patch("/allUsersData/:id", async (req, res) => {
         const id = req.params.id;
@@ -85,6 +97,18 @@ async function run() {
         const updateDoc = {
           $set: {
             status: "friend",
+          },
+        };
+        const result = await usersCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      });
+      //cancel friend
+      app.patch("/cancelFriend/:id", async (req, res) => {
+        const id = req.params.id;
+        const filter = { _id: new ObjectId(id) };
+        const updateDoc = {
+          $set: {
+            status: "",
           },
         };
         const result = await usersCollection.updateOne(filter, updateDoc);
@@ -321,6 +345,7 @@ async function run() {
       const result = await sellerFormCollection.deleteOne(query);
       res.send(result);
     });
+ 
     // delete products
     app.delete("/deleteProducts/:id", async (req, res) => {
       const id = req.params.id;
@@ -358,14 +383,14 @@ app.get("/eventdata", async (req, res) => {
 });
 
 // Event oparation end
- // Single User
- app.get("/user/:email", async (req, res) => {
-  const email = req.params.email;
-  const user = await usersCollection.findOne({ email: email });
-  if (!user) {
-    return res.status(404).send("User not found");
-  }
-  res.send(user);
+
+
+ // get Single User
+ app.get("/singleUser/:email", async (req, res) => {
+  const userEmail = req.params.email;
+  const query = { email: userEmail };
+  const result = await usersCollection.find(query).toArray();
+  res.send(result);
 });
 
 // Update user name
