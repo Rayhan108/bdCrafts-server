@@ -214,10 +214,19 @@ async function run() {
     });
 
     // all product api
-    app.get("/allProduct", async (req, res) => {
+    app.get("/product/:category", async (req, res) => {
+      const category = req.params.category;
+      console.log(category);
+      if(category == "allProduct"){
       const query = { status: "approved" };
       const result = await productsCollection.find(query).toArray();
       res.send(result);
+      return;
+      }
+      const query = { category: category };
+      const result = await productsCollection.find(query).toArray();
+      res.send(result);
+      
     });
     // get cart
     app.get("/cartsData", async (req, res) => {
