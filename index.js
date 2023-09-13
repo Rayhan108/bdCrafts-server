@@ -401,10 +401,10 @@ async function run() {
         total_amount: order.price,
         currency: order.currency,
         tran_id: tran_id, // use unique tran_id for each api call
-        success_url: `http://localhost:3000/payment/success/${tran_id}`,
-        fail_url: `http://localhost:3000/payment/fail/${tran_id}`,
-        cancel_url: 'http://localhost:3000/login',
-        ipn_url: 'http://localhost:3000/ipn',
+        success_url: `https://bd-crafts-server.vercel.app/payment/success/${tran_id}`,
+        fail_url: `https://bd-crafts-server.vercel.app/payment/fail/${tran_id}`,
+        cancel_url: 'https://bd-crafts-server.vercel.app/login',
+        ipn_url: 'https://bd-crafts-server.vercel.app/ipn',
         shipping_method: 'Courier',
         product_name: 'Computer.',
         product_category: 'Electronic',
@@ -456,13 +456,13 @@ async function run() {
       );
       if(result.modifiedCount > 0){
         console.log("result",)
-        res.redirect(`http://localhost:5173/paymentSuccess/${req.params.tranID}`)
+        res.redirect(`https://bd-crafts-client.vercel.app/paymentSuccess/${req.params.tranID}`)
       };
     })
     app.post("/payment/fail/:tranID", async(req,res) =>{
      const result = OrderCollection.deleteOne({transjectionId: req.params.tranID})
      if(result.deletedCount){
-      res.redirect(`http://localhost:3000/payment/fail/${req.params.tranID}`)
+      res.redirect(`https://bd-crafts-server.vercel.app/payment/fail/${req.params.tranID}`)
      }
     })
 
