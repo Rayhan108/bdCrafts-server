@@ -38,7 +38,7 @@ async function run() {
   try {
     const usersCollection = client.db("bd-crafts").collection("users");
     const postsCollection = client.db("bd-crafts").collection("posts");
-    const friendsCollection = client.db("bd-crafts").collection("friends");
+    // const friendsCollection = client.db("bd-crafts").collection("friends");
     const commentsCollection = client.db("bd-crafts").collection("comments");
     const sellerFormCollection = client.db("bd-crafts").collection("sellerForm");
       ///tarik
@@ -48,10 +48,8 @@ async function run() {
     const OrderCollection = client.db("bd-crafts").collection("orders")  
     const productsCollection = client.db("bd-crafts").collection("products");
     const cartsCollection = client.db("bd-crafts").collection("carts");
+    const eventCollection = client.db("bd-crafts").collection("events");
 
-    // const indexKeys = { name: 1 };
-    //     const indexOptions = { name: "userName" };
-    //     const result = await usersCollection.createIndex(indexKeys, indexOptions);
 
     // get method
 
@@ -61,11 +59,7 @@ async function run() {
       res.send(result);
     });
 
-    // get all fake friend
-    app.get("/allFakeFriend", async (req, res) => {
-      const result = await friendsCollection.find().toArray();
-      res.send(result);
-    });
+   
     // get all friend request link
     app.get("/allFriendRequestLink", async (req, res) => {
       const query = { status: "Add friend" };
@@ -78,6 +72,55 @@ async function run() {
       const result = await usersCollection.find(query).toArray();
       res.send(result);
     });
+      //add friend
+      app.patch("/alluser/:id", async (req, res) => {
+        const id = req.params.id;
+        const filter = { _id: new ObjectId(id) };
+        const updateDoc = {
+          $set: {
+            status: "Add friend",
+          },
+        };
+        const result = await usersCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      });
+      // deny add friend
+      app.patch("/denyFriend/:id", async (req, res) => {
+        const id = req.params.id;
+        const filter = { _id: new ObjectId(id) };
+        const updateDoc = {
+          $set: {
+            status: "",
+          },
+        };
+        const result = await usersCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      });
+      //confirm friend
+      app.patch("/allUsersData/:id", async (req, res) => {
+        const id = req.params.id;
+        const filter = { _id: new ObjectId(id) };
+        const updateDoc = {
+          $set: {
+            status: "friend",
+          },
+        };
+        const result = await usersCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      });
+      //cancel friend
+      app.patch("/cancelFriend/:id", async (req, res) => {
+        const id = req.params.id;
+        const filter = { _id: new ObjectId(id) };
+        const updateDoc = {
+          $set: {
+            status: "",
+          },
+        };
+        const result = await usersCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      });
+
     // get all post
     app.get("/allposts", async (req, res) => {
       const result = await postsCollection.find().toArray();
@@ -85,11 +128,11 @@ async function run() {
     });
 
     app.get("/myProducts", async (req, res) => {
-      // console.log(req.query);
+     
       const query = { sellerEmail: req.query.email, status: "approved" };
       const result = await productsCollection.find(query).toArray();
       res.send(result);
-      // console.log(result);
+      
     });
 
     // get pending seller list
@@ -122,18 +165,6 @@ async function run() {
       res.send(result);
     });
 
-    // find friend
-
-    app.get("/users/:text", async (req, res) => {
-      const text = req.params.text;
-
-      const result = await usersCollection
-        .find({
-          $or: [{ name: { $regex: text, $options: "i" } }],
-        })
-        .toArray();
-      res.send(result);
-    });
 
       // get admin role
       app.get("/admin/:email", async (req, res) => {
@@ -196,10 +227,19 @@ async function run() {
     });
 
     // all product api
-    app.get("/allProduct", async (req, res) => {
+    app.get("/product/:category", async (req, res) => {
+      const category = req.params.category;
+      console.log(category);
+      if(category == "allProduct"){
       const query = { status: "approved" };
       const result = await productsCollection.find(query).toArray();
       res.send(result);
+      return;
+      }
+      const query = { category: category };
+      const result = await productsCollection.find(query).toArray();
+      res.send(result);
+      
     });
     // get cart
     app.get("/cartsData", async (req, res) => {
@@ -228,6 +268,16 @@ async function run() {
 
       res.send(result);
     });
+    //  delete user 
+    app.delete("/manageUser/:id", async (req, res) => {
+      const id = req.params.id;
+
+      const query = { _id: new ObjectId(id) };
+      
+      const result = await usersCollection.deleteOne(query);
+
+      res.send(result);
+    });
 
     // POST/PATCH Method
 
@@ -241,6 +291,7 @@ async function run() {
       if (existingUser) {
         return res.json("user already exist ");
       }
+     
       const result = await usersCollection.insertOne(user);
       res.send(result);
     });
@@ -310,30 +361,7 @@ async function run() {
       res.send(result);
     });
 
-    //add friend
-    app.patch("/alluser/:id", async (req, res) => {
-      const id = req.params.id;
-      const filter = { _id: new ObjectId(id) };
-      const updateDoc = {
-        $set: {
-          status: "Add friend",
-        },
-      };
-      const result = await usersCollection.updateOne(filter, updateDoc);
-      res.send(result);
-    });
-    //confirm friend
-    app.patch("/allUsersData/:id", async (req, res) => {
-      const id = req.params.id;
-      const filter = { _id: new ObjectId(id) };
-      const updateDoc = {
-        $set: {
-          status: "friend",
-        },
-      };
-      const result = await usersCollection.updateOne(filter, updateDoc);
-      res.send(result);
-    });
+  
 
     // delete method
 
@@ -343,6 +371,7 @@ async function run() {
       const result = await sellerFormCollection.deleteOne(query);
       res.send(result);
     });
+ 
     // delete products
     app.delete("/deleteProducts/:id", async (req, res) => {
       const id = req.params.id;
