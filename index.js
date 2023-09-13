@@ -2,7 +2,7 @@ const express = require("express");
 const app = express();
 require("dotenv").config();
 const cors = require("cors");
-const SSLCommerzPayment = require('sslcommerz-lts')
+const SSLCommerzPayment=require("sslcommerz-lts")
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const port = process.env.PORT || 3000;
 // middleware
@@ -362,19 +362,20 @@ async function run() {
 
     // })
     
+    const tran_id = new ObjectId().toString();
     app.post('/order', async(req,res) =>{
       const product = await OrderCollection.findOne(({_id: new ObjectId(req.body.productID)}))
       const order = req.body;
-      
-      const tran_id = new ObjectId().toString();
+      console.log(order)
+      console.log(tran_id)
       const data = {
         total_amount: order.price,
         currency: order.currency,
         tran_id: tran_id, // use unique tran_id for each api call
-        success_url: `https://bd-crafts-server.vercel.app/payment/success/${tran_id}`,
-        fail_url: `https://bd-crafts-server.vercel.app/payment/fail/${tran_id}`,
-        cancel_url: 'https://bd-crafts-server.vercel.app/login',
-        ipn_url: 'https://bd-crafts-server.vercel.app/ipn',
+        success_url: `http://localhost:3000/payment/success/${tran_id}`,
+        fail_url: `http://localhost:3000/payment/fail/${tran_id}`,
+        cancel_url: 'http://localhost:3000/login',
+        ipn_url: 'http://localhost:3000/ipn',
         shipping_method: 'Courier',
         product_name: 'Computer.',
         product_category: 'Electronic',
@@ -411,6 +412,9 @@ async function run() {
         const result = OrderCollection.insertOne(finalOrder)
         console.log('Redirecting to: ', GatewayPageURL)
     });
+
+    })
+    ///sslcommerz related
     app.post("/payment/success/:tranID", async(req,res) =>{
       console.log(req.params.tranID)
       const result = await OrderCollection.updateOne(
@@ -422,18 +426,16 @@ async function run() {
         }
       );
       if(result.modifiedCount > 0){
-        res.redirect(`https://bd-crafts-server.vercel.app/payment/success/${req.params.tranID}`)
+        console.log("result",)
+        res.redirect(`http://localhost:5173/paymentSuccess/${req.params.tranID}`)
       };
     })
     app.post("/payment/fail/:tranID", async(req,res) =>{
      const result = OrderCollection.deleteOne({transjectionId: req.params.tranID})
      if(result.deletedCount){
-      res.redirect(`https://bd-crafts-server.vercel.app/payment/fail/${req.params.tranID}`)
+      res.redirect(`http://localhost:3000/payment/fail/${req.params.tranID}`)
      }
     })
-
-    })
-
 
     ///Search Collection
 
