@@ -4,7 +4,7 @@ require("dotenv").config();
 const cors = require("cors");
 const SSLCommerzPayment = require('sslcommerz-lts')
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 3000;
 // middleware
 const corsOptions = {
   origin: "*",
@@ -40,10 +40,11 @@ async function run() {
     const postsCollection = client.db("bd-crafts").collection("posts");
     const friendsCollection = client.db("bd-crafts").collection("friends");
     const commentsCollection = client.db("bd-crafts").collection("comments");
-    const sellerFormCollection = client
-      .db("bd-crafts")
-      .collection("sellerForm");
-    const productCollections = client.db("bd-crafts").collection("products")  
+    const sellerFormCollection = client.db("bd-crafts").collection("sellerForm");
+      ///tarik
+    const groupsCollection = client.db("bd-crafts").collection("groups")  
+    const storyCollection = client.db("bd-crafts").collection("stories")  
+    ///////
     const OrderCollection = client.db("bd-crafts").collection("orders")  
     const productsCollection = client.db("bd-crafts").collection("products");
     const cartsCollection = client.db("bd-crafts").collection("carts");
@@ -250,6 +251,16 @@ async function run() {
       const result = await postsCollection.insertOne(body);
       res.send(result);
     });
+    ////TARIK // createStory
+    app.post("/createStory", async (req, res) => {
+      const body = req.body;
+      const result = await storyCollection.insertOne(body);
+      res.send(result);
+    });
+    app.get("/createStory", async (req, res) => {
+      const result = await storyCollection.find().toArray();
+      res.send(result);
+    });
     // submit  seller form
     app.post("/sellerForm", async (req, res) => {
       const body = req.body;
@@ -345,25 +356,25 @@ async function run() {
 
     
  
-    app.get("/products", async (req, res) =>{
-      const products = await productCollections.find().toArray();
-      res.send(products)
+    // app.get("/products", async (req, res) =>{
+    //   const products = await productCollections.find().toArray();
+    //   res.send(products)
 
-    })
+    // })
     
     app.post('/order', async(req,res) =>{
-      const product = await productCollections.findOne(({_id: new ObjectId(req.body.productID)}))
+      const product = await OrderCollection.findOne(({_id: new ObjectId(req.body.productID)}))
       const order = req.body;
       
       const tran_id = new ObjectId().toString();
       const data = {
-        total_amount: product.price,
+        total_amount: order.price,
         currency: order.currency,
         tran_id: tran_id, // use unique tran_id for each api call
-        success_url: `http://localhost:5000/payment/success/${tran_id}`,
-        fail_url: `http://localhost:5000/payment/fail/${tran_id}`,
-        cancel_url: 'http://localhost:5000/cancel',
-        ipn_url: 'http://localhost:5000/ipn',
+        success_url: `https://bd-crafts-server.vercel.app/payment/success/${tran_id}`,
+        fail_url: `https://bd-crafts-server.vercel.app/payment/fail/${tran_id}`,
+        cancel_url: 'https://bd-crafts-server.vercel.app/login',
+        ipn_url: 'https://bd-crafts-server.vercel.app/ipn',
         shipping_method: 'Courier',
         product_name: 'Computer.',
         product_category: 'Electronic',
@@ -411,13 +422,13 @@ async function run() {
         }
       );
       if(result.modifiedCount > 0){
-        res.redirect(`http://localhost:5000/payment/success/${req.params.tranID}`)
+        res.redirect(`https://bd-crafts-server.vercel.app/payment/success/${req.params.tranID}`)
       };
     })
     app.post("/payment/fail/:tranID", async(req,res) =>{
      const result = OrderCollection.deleteOne({transjectionId: req.params.tranID})
      if(result.deletedCount){
-      res.redirect(`http://localhost:5000/payment/fail/${req.params.tranID}`)
+      res.redirect(`https://bd-crafts-server.vercel.app/payment/fail/${req.params.tranID}`)
      }
     })
 
@@ -430,34 +441,44 @@ async function run() {
       const searchText = req.params.text;
       
       // Search in projectCollection
-      const projectResults = await projectCollection.find({
+      const postResults = await postsCollection.find({
           $or: [
-              { tec: { $regex: searchText, $options: "i" } },
-              { id: { $regex: searchText, $options: "i" } }
+              { caption: { $regex: searchText, $options: "i" } },
+              { name: { $regex: searchText, $options: "i" } }
           ]
       }).toArray();
       
       // Search in userCollection
-      const userResults = await userCollection.find({
-          // Define your search criteria for the userCollection here
-      }).toArray();
+      // const shopResults = await shopCollection.find({
+      //     // Define your search criteria for the userCollection here
+      // }).toArray();
   
-      // Search in ViedosCollection
-      const videosResults = await ViedosCollection.find({
-          // Define your search criteria for the ViedosCollection here
+      // Search in usersCollection
+      const usersResults = await usersCollection.find({
+        $or: [
+          { email: { $regex: searchText, $options: "i" } },
+          { name: { $regex: searchText, $options: "i" } }
+      ]
       }).toArray();
   
       // Search in groupCollection
-      const groupResults = await groupCollection.find({
-          // Define your search criteria for the groupCollection here
+      // const groupResults = await groupsCollection.find({
+      //     // Define your search criteria for the groupCollection here
+      // }).toArray();
+      const productResults = await productsCollection.find({
+        $or: [
+          { email: { $regex: searchText, $options: "i" } },
+          { name: { $regex: searchText, $options: "i" } }
+      ]
       }).toArray();
   
       // Combine and send all the results
       const combinedResults = {
-          projects: projectResults,
-          users: userResults,
-          videos: videosResults,
-          groups: groupResults
+          post: postResults,
+          // shops: shopResults,
+          users: usersResults,
+          // groups: groupResults,
+          products:productResults
       };
       
       res.send(combinedResults);
