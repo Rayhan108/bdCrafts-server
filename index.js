@@ -122,11 +122,11 @@ async function run() {
     });
 
     app.get("/myProducts", async (req, res) => {
-      // console.log(req.query);
+     
       const query = { sellerEmail: req.query.email, status: "approved" };
       const result = await productsCollection.find(query).toArray();
       res.send(result);
-      // console.log(result);
+      
     });
 
     // get pending seller list
