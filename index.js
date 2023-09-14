@@ -53,6 +53,17 @@ async function run() {
       res.send(result);
     });
 
+    // get single  users
+    app.get("/singleUser/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = {email : email}
+      const result = await usersCollection.find(query).toArray();
+      res.send(result);
+    });
+
+
+
+
    
     // get all friend request link
     app.get("/allFriendRequestLink", async (req, res) => {
@@ -126,11 +137,11 @@ async function run() {
     // get all comments
     app.get("/comments/:id", async (req, res) => {
       const id = req.params.id;
-      console.log(id);
+      
       const query = { postId: id };
-      console.log(query);
+     
       const result = await commentsCollection.find(query).toArray();
-      console.log(result);
+      
       res.send(result);
     });
 
@@ -192,11 +203,12 @@ async function run() {
     // all product api
     app.get("/product/:category", async (req, res) => {
       const category = req.params.category;
-      console.log(category);
+      
       if(category == "allProduct"){
       const query = { status: "approved" };
       const result = await productsCollection.find(query).toArray();
       res.send(result);
+      console.log("All product list",result);
       return;
       }
       const query = { category: category };
@@ -216,7 +228,7 @@ async function run() {
     // post on cart
     app.post("/carts", async (req, res) => {
       const item = req.body;
-      //console.log(item);
+      
       const result = await cartsCollection.insertOne(item);
       res.send(result);
     });
@@ -225,7 +237,7 @@ async function run() {
       const id = req.params.id;
 
       const query = { id: id };
-      console.log(query);
+     
       const result = await cartsCollection.deleteOne(query);
 
       res.send(result);
@@ -243,13 +255,15 @@ async function run() {
 
     // POST/PATCH Method
 
+
+
     // add user
     app.post("/users", async (req, res) => {
       const user = req.body;
-      console.log(user);
+      
       const query = { email: user.email };
       const existingUser = await usersCollection.findOne(query);
-      console.log("existing user", existingUser);
+      
       if (existingUser) {
         return res.json("user already exist ");
       }
@@ -258,6 +272,27 @@ async function run() {
       res.send(result);
     });
 
+    // update profile data
+    app.patch("/updateProfile", async (req, res) => {
+      const userInfo = req.body;
+      const filter = { email: userInfo.email};
+      const options = { upsert: true };
+      const updateDoc = {
+      $set: {
+        name: userInfo.name,
+        coverPhoto: userInfo.coverPhoto,
+        birth: userInfo.birth,
+        religion: userInfo.religion,
+        location: userInfo.location,
+        relation: userInfo.relation,
+        bio: userInfo.bio
+      },
+    };
+      const result = await usersCollection.updateOne(filter, updateDoc, options);
+      console.log("Data after update profile",result);
+
+      // res.send(result);
+    });
     // post
     app.post("/post", async (req, res) => {
       const body = req.body;
@@ -295,7 +330,7 @@ async function run() {
       const deleteFilter = { sellerEmail: email };
 
       const deleteResult = await sellerFormCollection.deleteOne(deleteFilter);
-      // console.log({ result, deleteResult });
+      
       res.send({ result, deleteResult });
     });
 
@@ -346,7 +381,7 @@ async function run() {
 app.post("/eventdataPost", async (req, res) => {
   try {
   const eventdata = req.body;
-  console.log("event data", eventdata);
+  
   const result = await eventCollection.insertOne(eventdata);
   res.send(result);
 }  catch (error) {
