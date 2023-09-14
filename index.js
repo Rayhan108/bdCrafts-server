@@ -142,6 +142,14 @@ async function run() {
       const result = await postsCollection.find().toArray();
       res.send(result);
     });
+
+    // get post by user
+    app.get("/posts/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = {email : email}
+      const result = await postsCollection.find(query).toArray();
+      res.send(result);
+    });
    
     // add product
     app.post("/addProducts", async (req, res) => {
@@ -258,7 +266,7 @@ async function run() {
       const query = { status: "approved" };
       const result = await productsCollection.find(query).toArray();
       res.send(result);
-      console.log("All product list",result);
+      
       return;
       }
       const query = { category: category };
@@ -334,12 +342,12 @@ async function run() {
         religion: userInfo.religion,
         location: userInfo.location,
         relation: userInfo.relation,
-        bio: userInfo.bio
+        bio: userInfo.bio,
+        userName: userInfo.userName,
+        work: userInfo.work
       },
     };
       const result = await usersCollection.updateOne(filter, updateDoc, options);
-      // console.log("Data after update profile",result);
-
       res.send(result);
     });
     // post
