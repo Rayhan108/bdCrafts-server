@@ -2,7 +2,7 @@ const express = require("express");
 const app = express();
 require("dotenv").config();
 const cors = require("cors");
-const SSLCommerzPayment = require('sslcommerz-lts')
+const SSLCommerzPayment=require("sslcommerz-lts")
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const port = process.env.PORT || 5000;
 // middleware
@@ -40,11 +40,14 @@ async function run() {
     const postsCollection = client.db("bd-crafts").collection("posts");
     const friendsCollection = client.db("bd-crafts").collection("friends");
     const commentsCollection = client.db("bd-crafts").collection("comments");
-    const sellerFormCollection = client
-      .db("bd-crafts")
-      .collection("sellerForm");
-    const productCollections = client.db("bd-crafts").collection("products")  
+    const sellerFormCollection = client.db("bd-crafts").collection("sellerForm");
+      ///tarik
+    const groupsCollection = client.db("bd-crafts").collection("groups")  
+    const storyCollection = client.db("bd-crafts").collection("stories")  
+    ///////
     const OrderCollection = client.db("bd-crafts").collection("orders")  
+    const productsCollection = client.db("bd-crafts").collection("products");
+    const cartsCollection = client.db("bd-crafts").collection("carts");
 
     // const indexKeys = { name: 1 };
     //     const indexOptions = { name: "userName" };
@@ -57,6 +60,22 @@ async function run() {
       const result = await usersCollection.find().toArray();
       res.send(result);
     });
+    // get all fake friend
+    app.get("/allFakeFriend", async (req, res) => {
+      const result = await friendsCollection.find().toArray();
+      res.send(result);
+    });
+
+    // get single  users
+    app.get("/singleUser/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = {email : email}
+      const result = await usersCollection.find(query).toArray();
+      res.send(result);
+    });
+
+
+
 
     // get all fake friend
     app.get("/allFakeFriend", async (req, res) => {
@@ -80,6 +99,22 @@ async function run() {
       const result = await postsCollection.find().toArray();
       res.send(result);
     });
+   
+    // add product
+    app.post("/addProducts", async (req, res) => {
+      const newProducts = req.body;
+
+      const result = await productsCollection.insertOne(newProducts);
+      res.send(result);
+    });
+// my products
+    app.get("/myProducts", async (req, res) => {
+      // console.log(req.query);
+      const query = { sellerEmail: req.query.email, status: "approved" };
+      const result = await productsCollection.find(query).toArray();
+      res.send(result);
+      // console.log(result);
+    });
 
     // get pending seller list
     app.get("/pendingSeller", async (req, res) => {
@@ -87,11 +122,27 @@ async function run() {
       res.send(result);
     });
 
+    // get pending products list
+    app.get("/pendingProducts", async (req, res) => {
+      const query = { status: "pending" };
+      const result = await productsCollection.find(query).toArray();
+      res.send(result);
+    });
     // get particuler user posts
     app.get("/posts/:email", async (req, res) => {
       const userEmail = req.params.email;
       const query = { email: userEmail };
       const result = await postsCollection.find(query).toArray();
+      res.send(result);
+    });
+    // get all comments
+    app.get("/comments/:id", async (req, res) => {
+      const id = req.params.id;
+      
+      const query = { postId: id };
+     
+      const result = await commentsCollection.find(query).toArray();
+      
       res.send(result);
     });
 
@@ -116,7 +167,14 @@ async function run() {
         const result = { admin: user?.role === "admin" };
         res.send(result);
       });
-  
+   // get single user
+   app.get("/singleUser/:email", async (req, res) => {
+    const email = req.params.email;
+    const query = { email: email };
+    const result = await usersCollection.findOne(query);
+   
+    res.send(result);
+  });
  // get  seller role
  app.get("/sellerRole/:email", async (req, res) => {
   const email = req.params.email;
@@ -126,21 +184,101 @@ async function run() {
   res.send(result);
 });
 
+    // get admin role
+    app.get("/admin/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      const result = { admin: user?.role === "admin" };
+      res.send(result);
+    });
+    // get user role
+    app.get("/user/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      const result = { user: user?.role === "user" };
+      res.send(result);
+    });
+    // get Buyer role
+    app.get("/buyerRole/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      const result = { buyer: user?.role === "buyer" };
+      res.send(result);
+    });
+    // get Wholeseller role
+    app.get("/wholesellerRole/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      const result = { wholeseller: user?.role === "wholeseller" };
+      res.send(result);
+    });
 
+    // get  seller role
+    app.get("/sellerRole/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      const result = { seller: user?.role === "seller" };
+      res.send(result);
+    });
 
+    // all product api
+    app.get("/product/:category", async (req, res) => {
+      const category = req.params.category;
+      
+      if(category == "allProduct"){
+      const query = { status: "approved" };
+      const result = await productsCollection.find(query).toArray();
+      res.send(result);
+      console.log("All product list",result);
+      return;
+      }
+      const query = { category: category };
+      const result = await productsCollection.find(query).toArray();
+      res.send(result);
+      
+    });
+    // get cart
+    app.get("/cartsData", async (req, res) => {
+      const email = req.query.email;
+      const query = { email: email };
+      const result = await cartsCollection.find(query).toArray();
+      res.send(result);
+    });
 
+    // post on cart
+    app.post("/carts", async (req, res) => {
+      const item = req.body;
+      
+      const result = await cartsCollection.insertOne(item);
+      res.send(result);
+    });
+    //  delete cart api
+    app.delete("/carts/:id", async (req, res) => {
+      const id = req.params.id;
 
+      const query = { id: id };
+     
+      const result = await cartsCollection.deleteOne(query);
 
+      res.send(result);
+    });
 
     // POST/PATCH Method
+
+
 
     // add user
     app.post("/users", async (req, res) => {
       const user = req.body;
-      console.log(user);
+      
       const query = { email: user.email };
       const existingUser = await usersCollection.findOne(query);
-      console.log("existing user", existingUser);
+      
       if (existingUser) {
         return res.json("user already exist ");
       }
@@ -148,10 +286,41 @@ async function run() {
       res.send(result);
     });
 
+    // update profile data
+    app.patch("/updateProfile", async (req, res) => {
+      const userInfo = req.body;
+      const filter = { email: userInfo.email};
+      const options = { upsert: true };
+      const updateDoc = {
+      $set: {
+        name: userInfo.name,
+        coverPhoto: userInfo.coverPhoto,
+        birth: userInfo.birth,
+        religion: userInfo.religion,
+        location: userInfo.location,
+        relation: userInfo.relation,
+        bio: userInfo.bio
+      },
+    };
+      const result = await usersCollection.updateOne(filter, updateDoc, options);
+      // console.log("Data after update profile",result);
+
+      res.send(result);
+    });
     // post
     app.post("/post", async (req, res) => {
       const body = req.body;
       const result = await postsCollection.insertOne(body);
+      res.send(result);
+    });
+    ////TARIK // createStory
+    app.post("/createStory", async (req, res) => {
+      const body = req.body;
+      const result = await storyCollection.insertOne(body);
+      res.send(result);
+    });
+    app.get("/createStory", async (req, res) => {
+      const result = await storyCollection.find().toArray();
       res.send(result);
     });
     // submit  seller form
@@ -178,8 +347,21 @@ async function run() {
       const deleteFilter = { sellerEmail: email };
 
       const deleteResult = await sellerFormCollection.deleteOne(deleteFilter);
-      // console.log({ result, deleteResult });
+      
       res.send({ result, deleteResult });
+    });
+
+    // approve products
+    app.patch("/approvedProducts/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          status: "approved",
+        },
+      };
+      const result = await productsCollection.updateOne(filter, updateDoc);
+      res.send(result);
     });
 
     //comment on post
@@ -223,36 +405,39 @@ async function run() {
       const result = await sellerFormCollection.deleteOne(query);
       res.send(result);
     });
-
-
-    // payment SSLCommerz
-    app.post("/addProduct", async (req, res) => {
-      const body = req.body;
-      const result = await productCollections.insertOne(body);
+    // delete products
+    app.delete("/deleteProducts/:id", async (req, res) => {
+      const id = req.params.id;
+      
+      const query = { _id: new ObjectId(id) };
+      
+      const result = await productsCollection.deleteOne(query);
+      
       res.send(result);
     });
 
     
  
-    app.get("/products", async (req, res) =>{
-      const products = await productCollections.find().toArray();
-      res.send(products)
+    // app.get("/products", async (req, res) =>{
+    //   const products = await productCollections.find().toArray();
+    //   res.send(products)
 
-    })
+    // })
     
+    const tran_id = new ObjectId().toString();
     app.post('/order', async(req,res) =>{
-      const product = await productCollections.findOne(({_id: new ObjectId(req.body.productID)}))
+      // const product = await OrderCollection.findOne(({_id: new ObjectId(req.body.productID)}))
       const order = req.body;
-      
-      const tran_id = new ObjectId().toString();
+      console.log(order)
+      console.log(tran_id)
       const data = {
-        total_amount: product.price,
+        total_amount: order.price,
         currency: order.currency,
         tran_id: tran_id, // use unique tran_id for each api call
-        success_url: `http://localhost:3030/payment/success/${tran_id}`,
-        fail_url: `http://localhost:3030/payment/fail/${tran_id}`,
-        cancel_url: 'http://localhost:3030/cancel',
-        ipn_url: 'http://localhost:3030/ipn',
+        success_url: `https://bd-crafts-client.vercel.app/payment/success/${tran_id}`,
+        fail_url: `https://bd-crafts-client.vercel.app/payment/fail/${tran_id}`,
+        cancel_url: 'https://bd-crafts-client.vercel.app/login',
+        ipn_url: 'https://bd-crafts-client.vercel.app/ipn',
         shipping_method: 'Courier',
         product_name: 'Computer.',
         product_category: 'Electronic',
@@ -282,13 +467,16 @@ async function run() {
         let GatewayPageURL = apiResponse.GatewayPageURL
         res.send({url:GatewayPageURL})
         const finalOrder = {
-          product,
+          // product,
           paidStatus: false,
           transjectionId: tran_id,
         }
         const result = OrderCollection.insertOne(finalOrder)
         console.log('Redirecting to: ', GatewayPageURL)
     });
+
+    })
+    ///sslcommerz related
     app.post("/payment/success/:tranID", async(req,res) =>{
       console.log(req.params.tranID)
       const result = await OrderCollection.updateOne(
@@ -300,17 +488,66 @@ async function run() {
         }
       );
       if(result.modifiedCount > 0){
-        res.redirect(`http://localhost:5000/payment/success/${req.params.tranID}`)
+        
+        res.redirect(`https://bd-crafts-client.vercel.app/paymentSuccess/${req.params.tranID}`)
       };
     })
     app.post("/payment/fail/:tranID", async(req,res) =>{
      const result = OrderCollection.deleteOne({transjectionId: req.params.tranID})
      if(result.deletedCount){
-      res.redirect(`http://localhost:5000/payment/fail/${req.params.tranID}`)
+      res.redirect(`https://bd-crafts-client.vercel.app/payment/fail/${req.params.tranID}`)
      }
     })
 
-    })
+    ///Search Collection
+
+    app.get('/search/:text', async (req, res) => {
+      const searchText = req.params.text;
+      
+      // Search in projectCollection
+      const postResults = await postsCollection.find({
+          $or: [
+              { caption: { $regex: searchText, $options: "i" } },
+              { name: { $regex: searchText, $options: "i" } }
+          ]
+      }).toArray();
+      
+      // Search in userCollection
+      // const shopResults = await shopCollection.find({
+      //     // Define your search criteria for the userCollection here
+      // }).toArray();
+  
+      // Search in usersCollection
+      const usersResults = await usersCollection.find({
+        $or: [
+          { email: { $regex: searchText, $options: "i" } },
+          { name: { $regex: searchText, $options: "i" } }
+      ]
+      }).toArray();
+  
+      // Search in groupCollection
+      // const groupResults = await groupsCollection.find({
+      //     // Define your search criteria for the groupCollection here
+      // }).toArray();
+      const productResults = await productsCollection.find({
+        $or: [
+          { email: { $regex: searchText, $options: "i" } },
+          { name: { $regex: searchText, $options: "i" } }
+      ]
+      }).toArray();
+  
+      // Combine and send all the results
+      const combinedResults = {
+          post: postResults,
+          // shops: shopResults,
+          users: usersResults,
+          // groups: groupResults,
+          products:productResults
+      };
+      
+      res.send(combinedResults);
+  });
+  
     
   
     // Send a ping to confirm a successful connection
