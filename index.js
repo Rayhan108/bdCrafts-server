@@ -4,7 +4,7 @@ require("dotenv").config();
 const cors = require("cors");
 const SSLCommerzPayment=require("sslcommerz-lts")
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 5000;
 // middleware
 const corsOptions = {
   origin: "*",
@@ -60,6 +60,22 @@ async function run() {
       const result = await usersCollection.find().toArray();
       res.send(result);
     });
+    // get all fake friend
+    app.get("/allFakeFriend", async (req, res) => {
+      const result = await friendsCollection.find().toArray();
+      res.send(result);
+    });
+
+    // get single  users
+    app.get("/singleUser/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = {email : email}
+      const result = await usersCollection.find(query).toArray();
+      res.send(result);
+    });
+
+
+
 
     // get all fake friend
     app.get("/allFakeFriend", async (req, res) => {
@@ -83,7 +99,15 @@ async function run() {
       const result = await postsCollection.find().toArray();
       res.send(result);
     });
+   
+    // add product
+    app.post("/addProducts", async (req, res) => {
+      const newProducts = req.body;
 
+      const result = await productsCollection.insertOne(newProducts);
+      res.send(result);
+    });
+// my products
     app.get("/myProducts", async (req, res) => {
       // console.log(req.query);
       const query = { sellerEmail: req.query.email, status: "approved" };
@@ -114,11 +138,11 @@ async function run() {
     // get all comments
     app.get("/comments/:id", async (req, res) => {
       const id = req.params.id;
-      console.log(id);
+      
       const query = { postId: id };
-      console.log(query);
+     
       const result = await commentsCollection.find(query).toArray();
-      console.log(result);
+      
       res.send(result);
     });
 
@@ -143,7 +167,14 @@ async function run() {
         const result = { admin: user?.role === "admin" };
         res.send(result);
       });
-  
+   // get single user
+   app.get("/singleUser/:email", async (req, res) => {
+    const email = req.params.email;
+    const query = { email: email };
+    const result = await usersCollection.findOne(query);
+   
+    res.send(result);
+  });
  // get  seller role
  app.get("/sellerRole/:email", async (req, res) => {
   const email = req.params.email;
@@ -196,25 +227,33 @@ async function run() {
     });
 
     // all product api
-    app.get("/allProduct", async (req, res) => {
+    app.get("/product/:category", async (req, res) => {
+      const category = req.params.category;
+      
+      if(category == "allProduct"){
       const query = { status: "approved" };
       const result = await productsCollection.find(query).toArray();
       res.send(result);
+      console.log("All product list",result);
+      return;
+      }
+      const query = { category: category };
+      const result = await productsCollection.find(query).toArray();
+      res.send(result);
+      
     });
     // get cart
     app.get("/cartsData", async (req, res) => {
       const email = req.query.email;
       const query = { email: email };
       const result = await cartsCollection.find(query).toArray();
-
-
       res.send(result);
     });
 
     // post on cart
     app.post("/carts", async (req, res) => {
       const item = req.body;
-      //console.log(item);
+      
       const result = await cartsCollection.insertOne(item);
       res.send(result);
     });
@@ -223,7 +262,7 @@ async function run() {
       const id = req.params.id;
 
       const query = { id: id };
-      console.log(query);
+     
       const result = await cartsCollection.deleteOne(query);
 
       res.send(result);
@@ -231,13 +270,15 @@ async function run() {
 
     // POST/PATCH Method
 
+
+
     // add user
     app.post("/users", async (req, res) => {
       const user = req.body;
-      console.log(user);
+      
       const query = { email: user.email };
       const existingUser = await usersCollection.findOne(query);
-      console.log("existing user", existingUser);
+      
       if (existingUser) {
         return res.json("user already exist ");
       }
@@ -245,6 +286,27 @@ async function run() {
       res.send(result);
     });
 
+    // update profile data
+    app.patch("/updateProfile", async (req, res) => {
+      const userInfo = req.body;
+      const filter = { email: userInfo.email};
+      const options = { upsert: true };
+      const updateDoc = {
+      $set: {
+        name: userInfo.name,
+        coverPhoto: userInfo.coverPhoto,
+        birth: userInfo.birth,
+        religion: userInfo.religion,
+        location: userInfo.location,
+        relation: userInfo.relation,
+        bio: userInfo.bio
+      },
+    };
+      const result = await usersCollection.updateOne(filter, updateDoc, options);
+      // console.log("Data after update profile",result);
+
+      res.send(result);
+    });
     // post
     app.post("/post", async (req, res) => {
       const body = req.body;
@@ -285,7 +347,7 @@ async function run() {
       const deleteFilter = { sellerEmail: email };
 
       const deleteResult = await sellerFormCollection.deleteOne(deleteFilter);
-      // console.log({ result, deleteResult });
+      
       res.send({ result, deleteResult });
     });
 
@@ -372,10 +434,10 @@ async function run() {
         total_amount: order.price,
         currency: order.currency,
         tran_id: tran_id, // use unique tran_id for each api call
-        success_url: `https://bd-crafts-server.vercel.app/payment/success/${tran_id}`,
-        fail_url: `https://bd-crafts-server.vercel.app/payment/fail/${tran_id}`,
-        cancel_url: 'https://bd-crafts-server.vercel.app/login',
-        ipn_url: 'https://bd-crafts-server.vercel.app/ipn',
+        success_url: `https://bd-crafts-client.vercel.app/payment/success/${tran_id}`,
+        fail_url: `https://bd-crafts-client.vercel.app/payment/fail/${tran_id}`,
+        cancel_url: 'https://bd-crafts-client.vercel.app/login',
+        ipn_url: 'https://bd-crafts-client.vercel.app/ipn',
         shipping_method: 'Courier',
         product_name: 'Computer.',
         product_category: 'Electronic',
@@ -433,7 +495,7 @@ async function run() {
     app.post("/payment/fail/:tranID", async(req,res) =>{
      const result = OrderCollection.deleteOne({transjectionId: req.params.tranID})
      if(result.deletedCount){
-      res.redirect(`https://bd-crafts-server.vercel.app/payment/fail/${req.params.tranID}`)
+      res.redirect(`https://bd-crafts-client.vercel.app/payment/fail/${req.params.tranID}`)
      }
     })
 
