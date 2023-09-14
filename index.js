@@ -187,7 +187,14 @@ async function run() {
         const result = { admin: user?.role === "admin" };
         res.send(result);
       });
-  
+   // get single user
+   app.get("/singleUser/:email", async (req, res) => {
+    const email = req.params.email;
+    const query = { email: email };
+    const result = await usersCollection.findOne(query);
+   
+    res.send(result);
+  });
  // get  seller role
  app.get("/sellerRole/:email", async (req, res) => {
   const email = req.params.email;
