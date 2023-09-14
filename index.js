@@ -289,9 +289,9 @@ async function run() {
       },
     };
       const result = await usersCollection.updateOne(filter, updateDoc, options);
-      console.log("Data after update profile",result);
+      // console.log("Data after update profile",result);
 
-      // res.send(result);
+      res.send(result);
     });
     // post
     app.post("/post", async (req, res) => {
