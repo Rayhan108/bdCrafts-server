@@ -48,8 +48,10 @@ async function run() {
     const OrderCollection = client.db("bd-crafts").collection("orders")  
     const productsCollection = client.db("bd-crafts").collection("products");
     const cartsCollection = client.db("bd-crafts").collection("carts");
-    const eventCollection = client.db("bd-crafts").collection("events");
 
+    // const indexKeys = { name: 1 };
+    //     const indexOptions = { name: "userName" };
+    //     const result = await usersCollection.createIndex(indexKeys, indexOptions);
 
     // get method
 
@@ -75,7 +77,11 @@ async function run() {
 
 
 
-   
+    // get all fake friend
+    app.get("/allFakeFriend", async (req, res) => {
+      const result = await friendsCollection.find().toArray();
+      res.send(result);
+    });
     // get all friend request link
     app.get("/allFriendRequestLink", async (req, res) => {
       const query = { status: "Add friend" };
@@ -88,55 +94,6 @@ async function run() {
       const result = await usersCollection.find(query).toArray();
       res.send(result);
     });
-      //add friend
-      app.patch("/alluser/:id", async (req, res) => {
-        const id = req.params.id;
-        const filter = { _id: new ObjectId(id) };
-        const updateDoc = {
-          $set: {
-            status: "Add friend",
-          },
-        };
-        const result = await usersCollection.updateOne(filter, updateDoc);
-        res.send(result);
-      });
-      // deny add friend
-      app.patch("/denyFriend/:id", async (req, res) => {
-        const id = req.params.id;
-        const filter = { _id: new ObjectId(id) };
-        const updateDoc = {
-          $set: {
-            status: "",
-          },
-        };
-        const result = await usersCollection.updateOne(filter, updateDoc);
-        res.send(result);
-      });
-      //confirm friend
-      app.patch("/allUsersData/:id", async (req, res) => {
-        const id = req.params.id;
-        const filter = { _id: new ObjectId(id) };
-        const updateDoc = {
-          $set: {
-            status: "friend",
-          },
-        };
-        const result = await usersCollection.updateOne(filter, updateDoc);
-        res.send(result);
-      });
-      //cancel friend
-      app.patch("/cancelFriend/:id", async (req, res) => {
-        const id = req.params.id;
-        const filter = { _id: new ObjectId(id) };
-        const updateDoc = {
-          $set: {
-            status: "",
-          },
-        };
-        const result = await usersCollection.updateOne(filter, updateDoc);
-        res.send(result);
-      });
-
     // get all post
     app.get("/allposts", async (req, res) => {
       const result = await postsCollection.find().toArray();
@@ -152,11 +109,11 @@ async function run() {
     });
 // my products
     app.get("/myProducts", async (req, res) => {
-     
+      // console.log(req.query);
       const query = { sellerEmail: req.query.email, status: "approved" };
       const result = await productsCollection.find(query).toArray();
       res.send(result);
-      
+      // console.log(result);
     });
 
     // get pending seller list
@@ -189,6 +146,18 @@ async function run() {
       res.send(result);
     });
 
+    // find friend
+
+    app.get("/users/:text", async (req, res) => {
+      const text = req.params.text;
+
+      const result = await usersCollection
+        .find({
+          $or: [{ name: { $regex: text, $options: "i" } }],
+        })
+        .toArray();
+      res.send(result);
+    });
 
       // get admin role
       app.get("/admin/:email", async (req, res) => {
@@ -298,16 +267,6 @@ async function run() {
 
       res.send(result);
     });
-    //  delete user 
-    app.delete("/manageUser/:id", async (req, res) => {
-      const id = req.params.id;
-
-      const query = { _id: new ObjectId(id) };
-      
-      const result = await usersCollection.deleteOne(query);
-
-      res.send(result);
-    });
 
     // POST/PATCH Method
 
@@ -323,7 +282,6 @@ async function run() {
       if (existingUser) {
         return res.json("user already exist ");
       }
-     
       const result = await usersCollection.insertOne(user);
       res.send(result);
     });
@@ -414,7 +372,30 @@ async function run() {
       res.send(result);
     });
 
-  
+    //add friend
+    app.patch("/alluser/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          status: "Add friend",
+        },
+      };
+      const result = await usersCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+    //confirm friend
+    app.patch("/allUsersData/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          status: "friend",
+        },
+      };
+      const result = await usersCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
 
     // delete method
 
@@ -424,7 +405,6 @@ async function run() {
       const result = await sellerFormCollection.deleteOne(query);
       res.send(result);
     });
- 
     // delete products
     app.delete("/deleteProducts/:id", async (req, res) => {
       const id = req.params.id;
@@ -454,10 +434,10 @@ async function run() {
         total_amount: order.price,
         currency: order.currency,
         tran_id: tran_id, // use unique tran_id for each api call
-        success_url: `http://localhost:5000/payment/success/${tran_id}`,
-        fail_url: `http://localhost:5000/payment/fail/${tran_id}`,
-        cancel_url: 'http://localhost:5000/login',
-        ipn_url: 'http://localhost:5000/ipn',
+        success_url: `https://bd-crafts-client.vercel.app/payment/success/${tran_id}`,
+        fail_url: `https://bd-crafts-client.vercel.app/payment/fail/${tran_id}`,
+        cancel_url: 'https://bd-crafts-client.vercel.app/login',
+        ipn_url: 'https://bd-crafts-client.vercel.app/ipn',
         shipping_method: 'Courier',
         product_name: 'Computer.',
         product_category: 'Electronic',
@@ -487,7 +467,7 @@ async function run() {
         let GatewayPageURL = apiResponse.GatewayPageURL
         res.send({url:GatewayPageURL})
         const finalOrder = {
-          product,
+          // product,
           paidStatus: false,
           transjectionId: tran_id,
         }
@@ -508,14 +488,14 @@ async function run() {
         }
       );
       if(result.modifiedCount > 0){
-        console.log("result",)
-        res.redirect(`http://localhost:5173/paymentSuccess/${req.params.tranID}`)
+        
+        res.redirect(`https://bd-crafts-client.vercel.app/paymentSuccess/${req.params.tranID}`)
       };
     })
     app.post("/payment/fail/:tranID", async(req,res) =>{
      const result = OrderCollection.deleteOne({transjectionId: req.params.tranID})
      if(result.deletedCount){
-      res.redirect(`http://localhost:5000/payment/fail/${req.params.tranID}`)
+      res.redirect(`https://bd-crafts-client.vercel.app/payment/fail/${req.params.tranID}`)
      }
     })
 
