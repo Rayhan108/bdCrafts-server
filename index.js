@@ -38,7 +38,7 @@ async function run() {
   try {
     const usersCollection = client.db("bd-crafts").collection("users");
     const postsCollection = client.db("bd-crafts").collection("posts");
-    // const friendsCollection = client.db("bd-crafts").collection("friends");
+    const friendsCollection = client.db("bd-crafts").collection("friends");
     const commentsCollection = client.db("bd-crafts").collection("comments");
     const sellerFormCollection = client.db("bd-crafts").collection("sellerForm");
       ///tarik
@@ -56,6 +56,11 @@ async function run() {
     // get all users
     app.get("/allusers", async (req, res) => {
       const result = await usersCollection.find().toArray();
+      res.send(result);
+    });
+    // get all fake friend
+    app.get("/allFakeFriend", async (req, res) => {
+      const result = await friendsCollection.find().toArray();
       res.send(result);
     });
 
@@ -126,7 +131,15 @@ async function run() {
       const result = await postsCollection.find().toArray();
       res.send(result);
     });
+   
+    // add product
+    app.post("/addProducts", async (req, res) => {
+      const newProducts = req.body;
 
+      const result = await productsCollection.insertOne(newProducts);
+      res.send(result);
+    });
+// my products
     app.get("/myProducts", async (req, res) => {
      
       const query = { sellerEmail: req.query.email, status: "approved" };
@@ -246,8 +259,6 @@ async function run() {
       const email = req.query.email;
       const query = { email: email };
       const result = await cartsCollection.find(query).toArray();
-
-
       res.send(result);
     });
 
@@ -393,7 +404,7 @@ async function run() {
     
     const tran_id = new ObjectId().toString();
     app.post('/order', async(req,res) =>{
-      const product = await OrderCollection.findOne(({_id: new ObjectId(req.body.productID)}))
+      // const product = await OrderCollection.findOne(({_id: new ObjectId(req.body.productID)}))
       const order = req.body;
       console.log(order)
       console.log(tran_id)
@@ -401,10 +412,10 @@ async function run() {
         total_amount: order.price,
         currency: order.currency,
         tran_id: tran_id, // use unique tran_id for each api call
-        success_url: `https://bd-crafts-server.vercel.app/payment/success/${tran_id}`,
-        fail_url: `https://bd-crafts-server.vercel.app/payment/fail/${tran_id}`,
-        cancel_url: 'https://bd-crafts-server.vercel.app/login',
-        ipn_url: 'https://bd-crafts-server.vercel.app/ipn',
+        success_url: `http://localhost:5000/payment/success/${tran_id}`,
+        fail_url: `http://localhost:5000/payment/fail/${tran_id}`,
+        cancel_url: 'http://localhost:5000/login',
+        ipn_url: 'http://localhost:5000/ipn',
         shipping_method: 'Courier',
         product_name: 'Computer.',
         product_category: 'Electronic',
@@ -456,13 +467,13 @@ async function run() {
       );
       if(result.modifiedCount > 0){
         console.log("result",)
-        res.redirect(`https://bd-crafts-client.vercel.app/paymentSuccess/${req.params.tranID}`)
+        res.redirect(`http://localhost:5173/paymentSuccess/${req.params.tranID}`)
       };
     })
     app.post("/payment/fail/:tranID", async(req,res) =>{
      const result = OrderCollection.deleteOne({transjectionId: req.params.tranID})
      if(result.deletedCount){
-      res.redirect(`https://bd-crafts-server.vercel.app/payment/fail/${req.params.tranID}`)
+      res.redirect(`http://localhost:5000/payment/fail/${req.params.tranID}`)
      }
     })
 
