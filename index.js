@@ -48,7 +48,7 @@ async function run() {
     const OrderCollection = client.db("bd-crafts").collection("orders")  
     const productsCollection = client.db("bd-crafts").collection("products");
     const cartsCollection = client.db("bd-crafts").collection("carts");
-
+    const eventCollection = client.db("bd-crafts").collection("events");
     // const indexKeys = { name: 1 };
     //     const indexOptions = { name: "userName" };
     //     const result = await usersCollection.createIndex(indexKeys, indexOptions);
@@ -417,12 +417,6 @@ async function run() {
     });
 
     
- 
-    // app.get("/products", async (req, res) =>{
-    //   const products = await productCollections.find().toArray();
-    //   res.send(products)
-
-    // })
     
     const tran_id = new ObjectId().toString();
     app.post('/order', async(req,res) =>{
@@ -548,7 +542,24 @@ async function run() {
       res.send(combinedResults);
   });
   
-    
+    // Event Data
+
+    app.post("/eventdataPost", async (req, res) => {
+     
+        const eventdata = req.body;
+        console.log("event data", eventdata);
+        const result = await eventCollection.insertOne(eventdata);
+        res.send(result);
+     
+      
+    });
+
+    app.get("/eventdata", async (req, res) => {
+      const result = await eventCollection.find().toArray();
+      res.send(result);
+    });
+
+    // Event oparation end
   
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
